@@ -23,11 +23,11 @@ Manimp is a multi-tenant metal project management application built with .NET 8,
 
 ```
 Manimp/
-├── Manimp.Shared/          # Common models and interfaces
-├── Manimp.Auth/            # Authentication models (ApplicationUser)
-├── Manimp.Directory/       # Central directory service
-├── Manimp.Data/            # Tenant database contexts
-├── Manimp.Services/        # Business logic services
+├── Manimp.Shared/          # Common models and interfaces (Models.cs)
+├── Manimp.Auth/            # Authentication models (ApplicationUser.cs)
+├── Manimp.Directory/       # Central directory service (DirectoryDbContext.cs)
+├── Manimp.Data/            # Tenant database contexts (AppDbContext.cs)
+├── Manimp.Services/        # Business logic services (TenantService.cs, CompanyRegistrationService.cs)
 ├── Manimp.Api/             # Web API endpoints
 └── Manimp.Web/            # Blazor Server web application
 ```
@@ -39,6 +39,7 @@ Manimp/
 - **Email-Only Login**: Resolves tenant privately without exposure
 - **User Management**: Admin can add users within tenant
 - **Landing Page**: Feature overview and privacy information
+- **Clean Architecture**: Template artifacts removed, proper file naming
 
 ### 🚧 Coming Next
 - **Projects**: Project management and tracking

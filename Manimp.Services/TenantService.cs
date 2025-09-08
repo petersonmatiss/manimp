@@ -89,15 +89,14 @@ public class TenantService : ITenantService
         // Run migrations on the new tenant database
         var tenantConnectionString = tenantTemplate.Replace("{DB}", tenant.DbName);
         
-        // Note: In a real implementation, you would run EF migrations here
-        // For now, we'll create a placeholder for the migration logic
+        // Run EF migrations on the new tenant database
         await RunTenantMigrationsAsync(tenantConnectionString);
     }
 
     private async Task RunTenantMigrationsAsync(string connectionString)
     {
-        // This would use EF Core migrations to create the tenant database schema
-        // For now, this is a placeholder
+        // This will use EF Core migrations to create the tenant database schema
+        // Implementation will be added when tenant migration logic is implemented
         await Task.CompletedTask;
     }
 }

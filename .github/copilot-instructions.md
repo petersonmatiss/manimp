@@ -4,6 +4,22 @@ Manimp is a .NET 8 Blazor Server application with MudBlazor UI for managing meta
 
 **Always reference these instructions first and fallback to search or bash commands only when you encounter unexpected information that does not match the info here.**
 
+## 🚨 IMPORTANT: Documentation Synchronization
+
+**REQUIRED for every agent working on this repository:**
+
+1. **After completing any work**, you MUST update the README.md file to reflect:
+   - New features implemented
+   - Architecture changes
+   - File structure modifications
+   - Current status of the project
+
+2. **Keep this file and README.md synchronized** - they serve as the single source of truth for the project
+
+3. **README updates are mandatory** - No work is considered complete without updating the README to reflect the current state
+
+4. **Use the `report_progress` tool** to commit both code changes AND documentation updates together
+
 ## Working Effectively
 
 ### Prerequisites and Environment Setup
@@ -13,17 +29,19 @@ Manimp is a .NET 8 Blazor Server application with MudBlazor UI for managing meta
 - For Azure SQL development, ensure you have connection strings configured
 
 ### Repository Structure (current)
-The solution follows this structure with complete implementation:
+The solution follows this structure with complete implementation and clean file naming:
 ```
 Manimp.sln
-├── Manimp.Shared/        - Common models and shared code ✅
-├── Manimp.Auth/          - Authentication and authorization ✅
-├── Manimp.Directory/     - Central directory for tenant mapping ✅
-├── Manimp.Data/          - Entity Framework contexts and models ✅
-├── Manimp.Services/      - Business logic and services ✅
+├── Manimp.Shared/        - Common models and shared code ✅ (Models.cs)
+├── Manimp.Auth/          - Authentication and authorization ✅ (ApplicationUser.cs)
+├── Manimp.Directory/     - Central directory for tenant mapping ✅ (DirectoryDbContext.cs)
+├── Manimp.Data/          - Entity Framework contexts and models ✅ (AppDbContext.cs)
+├── Manimp.Services/      - Business logic and services ✅ (TenantService.cs, CompanyRegistrationService.cs)
 ├── Manimp.Api/           - Web API controllers ✅
 └── Manimp.Web/           - Blazor Server UI with MudBlazor ✅
 ```
+
+**Template artifacts have been cleaned up** - all Class1.cs files have been renamed to meaningful names, template Blazor components (Counter, Weather) have been removed, and placeholder comments have been cleaned up.
 
 ### Working with the Existing Solution
 **The complete solution is now scaffolded and ready for development. Key verification commands:**
