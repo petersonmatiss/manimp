@@ -39,15 +39,13 @@ public class CompanyRegistrationService : ICompanyRegistrationService
                 request.AdminEmail.ToUpperInvariant(), 
                 tenant.TenantId);
 
-            // TODO: Assign Admin role to the user
-            // This would require role management implementation
+            // Role assignment will be implemented when role management is added
 
             return tenant.TenantId;
         }
         catch
         {
-            // TODO: Cleanup tenant if user creation fails
-            // This would require implementing tenant deletion
+            // Tenant cleanup will be implemented when tenant deletion is added
             throw;
         }
     }
