@@ -106,6 +106,56 @@ UserDirectory
 
 ## Operations
 
+### CI/CD Pipeline
+
+The repository includes comprehensive GitHub Actions workflows for automated build, test, and deployment:
+
+#### Workflows
+- **CI Pipeline** (`.github/workflows/ci.yml`)
+  - Builds and tests on every push/PR to main/develop
+  - Code quality checks with `dotnet format`
+  - Security scanning with Trivy
+  - Publishes build artifacts
+
+- **Azure Deployment** (`.github/workflows/deploy-azure.yml`)
+  - Automated deployment to Azure App Service
+  - Supports staging and production environments
+  - Database migration support
+
+- **Container Apps Deployment** (`.github/workflows/deploy-container-apps.yml`)
+  - Deploys to Azure Container Apps (recommended)
+  - Builds and pushes Docker images
+  - Better cost optimization
+
+#### Required GitHub Secrets
+```
+# For App Service deployment
+AZURE_WEBAPP_PUBLISH_PROFILE
+AZURE_WEBAPP_PUBLISH_PROFILE_STAGING
+AZURE_SQL_CONNECTION_STRING
+AZURE_SQL_CONNECTION_STRING_STAGING
+
+# For Container Apps deployment (recommended)
+AZURE_CREDENTIALS
+AZURE_CREDENTIALS_STAGING
+ACR_USERNAME
+ACR_PASSWORD
+```
+
+### Azure Deployment Options
+
+#### Option 1: Azure App Service (Traditional)
+- **Cost**: ~$73/month (S1 plan)
+- **Best for**: Traditional deployments, steady traffic
+- **Features**: Easy setup, staging slots, auto-scale
+
+#### Option 2: Azure Container Apps (Recommended) 🌟
+- **Cost**: ~$15-30/month (60-80% savings)
+- **Best for**: Variable traffic, cost optimization
+- **Features**: Pay-per-use, auto-scale to zero, modern platform
+
+See [`docs/azure-deployment.md`](docs/azure-deployment.md) for complete deployment instructions.
+
 ### Deployment
 1. Deploy central Directory database
 2. Configure connection strings and secrets

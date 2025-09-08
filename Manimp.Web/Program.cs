@@ -32,6 +32,10 @@ builder.Services.AddScoped<ICompanyRegistrationService, CompanyRegistrationServi
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITenantDbContext, TenantDbContextService>();
 
+// Add health checks for container deployment
+builder.Services.AddHealthChecks()
+    .AddSqlServer(builder.Configuration.GetConnectionString("Directory")!, name: "directory_database");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -45,6 +49,11 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+// Add health check endpoints for container deployment
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready");
+app.MapHealthChecks("/health/live");
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
