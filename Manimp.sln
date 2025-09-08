@@ -1,0 +1,58 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manimp.Shared", "Manimp.Shared\Manimp.Shared.csproj", "{534F6657-BDAA-4A55-B0BF-17C1638878B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manimp.Auth", "Manimp.Auth\Manimp.Auth.csproj", "{B20C4100-FE20-4B1F-B7A5-F8FBB43FA503}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manimp.Directory", "Manimp.Directory\Manimp.Directory.csproj", "{C3020936-830E-4274-8292-C2A3853B5AF6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manimp.Data", "Manimp.Data\Manimp.Data.csproj", "{5509C55E-423B-4E61-9BC5-5535CCF85EC6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manimp.Services", "Manimp.Services\Manimp.Services.csproj", "{B9395C34-F9F9-4742-801E-3B6F9449C257}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manimp.Api", "Manimp.Api\Manimp.Api.csproj", "{420B964F-E6C8-4B6E-9673-5F303DE7C25F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Manimp.Web", "Manimp.Web\Manimp.Web.csproj", "{2DD24D1C-0EF4-4CA0-9429-ED6D42096C61}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{534F6657-BDAA-4A55-B0BF-17C1638878B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{534F6657-BDAA-4A55-B0BF-17C1638878B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{534F6657-BDAA-4A55-B0BF-17C1638878B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{534F6657-BDAA-4A55-B0BF-17C1638878B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B20C4100-FE20-4B1F-B7A5-F8FBB43FA503}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B20C4100-FE20-4B1F-B7A5-F8FBB43FA503}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B20C4100-FE20-4B1F-B7A5-F8FBB43FA503}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B20C4100-FE20-4B1F-B7A5-F8FBB43FA503}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3020936-830E-4274-8292-C2A3853B5AF6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3020936-830E-4274-8292-C2A3853B5AF6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3020936-830E-4274-8292-C2A3853B5AF6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3020936-830E-4274-8292-C2A3853B5AF6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5509C55E-423B-4E61-9BC5-5535CCF85EC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5509C55E-423B-4E61-9BC5-5535CCF85EC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5509C55E-423B-4E61-9BC5-5535CCF85EC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5509C55E-423B-4E61-9BC5-5535CCF85EC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9395C34-F9F9-4742-801E-3B6F9449C257}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9395C34-F9F9-4742-801E-3B6F9449C257}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9395C34-F9F9-4742-801E-3B6F9449C257}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9395C34-F9F9-4742-801E-3B6F9449C257}.Release|Any CPU.Build.0 = Release|Any CPU
+		{420B964F-E6C8-4B6E-9673-5F303DE7C25F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{420B964F-E6C8-4B6E-9673-5F303DE7C25F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{420B964F-E6C8-4B6E-9673-5F303DE7C25F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{420B964F-E6C8-4B6E-9673-5F303DE7C25F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DD24D1C-0EF4-4CA0-9429-ED6D42096C61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DD24D1C-0EF4-4CA0-9429-ED6D42096C61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DD24D1C-0EF4-4CA0-9429-ED6D42096C61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DD24D1C-0EF4-4CA0-9429-ED6D42096C61}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

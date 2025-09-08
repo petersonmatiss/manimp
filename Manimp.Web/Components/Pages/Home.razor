@@ -1,0 +1,125 @@
+﻿@page "/"
+
+<PageTitle>Manimp - Metal Project Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-6">
+    <!-- Hero Section -->
+    <MudPaper Class="pa-8 ma-4 text-center" Elevation="2">
+        <MudText Typo="Typo.h2" Align="Align.Center" Class="mb-4" Color="Color.Primary">
+            <MudIcon Icon="@Icons.Material.Filled.Engineering" Size="Size.Large" Class="mr-2" />
+            Manimp
+        </MudText>
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Color="Color.Secondary">
+            One source of truth for metal projects
+        </MudText>
+        
+        <MudStack Row Justify="Justify.Center" Spacing="4" Class="mb-6">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large" Href="/register">
+                Start Your Company
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large" Href="/login">
+                Sign In
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+
+    <!-- Current Features -->
+    <MudPaper Class="pa-6 ma-4" Elevation="1">
+        <MudText Typo="Typo.h5" Class="mb-4" Color="Color.Primary">
+            Available Today
+        </MudText>
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudCard Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Business" Size="Size.Large" Color="Color.Success" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Company Registration</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">
+                        Set up your company with secure database-per-tenant architecture
+                    </MudText>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Login" Size="Size.Large" Color="Color.Success" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Email-Only Login</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">
+                        Simple, secure login with private tenant resolution
+                    </MudText>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudCard Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Color="Color.Success" />
+                    <MudText Typo="Typo.h6" Class="mt-2">User Management</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">
+                        Admin can add users within your tenant
+                    </MudText>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Coming Next -->
+    <MudPaper Class="pa-6 ma-4" Elevation="1">
+        <MudText Typo="Typo.h5" Class="mb-4" Color="Color.Primary">
+            Coming Next
+        </MudText>
+        <MudGrid>
+            <MudItem xs="12" md="3">
+                <MudCard Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Projects</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">Project management and tracking</MudText>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudCard Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Inventory</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">Profiles, sheets, and materials</MudText>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudCard Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.ShoppingCart" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Purchasing</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">POs, invoices, and GRNs</MudText>
+                </MudCard>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudCard Class="pa-4 text-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Build" Size="Size.Large" Color="Color.Info" />
+                    <MudText Typo="Typo.h6" Class="mt-2">Production</MudText>
+                    <MudText Typo="Typo.body2" Class="mt-2">Manufacturing and quality control</MudText>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Privacy & Security -->
+    <MudPaper Class="pa-6 ma-4" Elevation="1">
+        <MudText Typo="Typo.h5" Class="mb-4" Color="Color.Primary">
+            Privacy & Security
+        </MudText>
+        <MudGrid>
+            <MudItem xs="12" md="4">
+                <MudStack Row Class="align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Security" Color="Color.Success" />
+                    <MudText Typo="Typo.body1"><strong>Database per tenant</strong> - Complete data isolation</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudStack Row Class="align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.VisibilityOff" Color="Color.Success" />
+                    <MudText Typo="Typo.body1"><strong>No tenant exposure</strong> - Private tenant resolution</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudStack Row Class="align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.Gavel" Color="Color.Success" />
+                    <MudText Typo="Typo.body1"><strong>GDPR-friendly</strong> - Data protection by design</MudText>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+</MudContainer>
