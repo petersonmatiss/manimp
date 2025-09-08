@@ -1,0 +1,109 @@
+name: .NET Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly security scans on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  dotnet-security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Install dotnet list package vulnerable tool
+      run: dotnet tool install --global dotnet-list-package-vulnerable || dotnet tool update --global dotnet-list-package-vulnerable
+      
+    - name: Check for vulnerable packages
+      run: |
+        echo "Scanning for vulnerable NuGet packages..."
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerable-packages.txt
+        
+        # Check if any vulnerabilities were found
+        if grep -q "has the following vulnerable packages" vulnerable-packages.txt; then
+          echo "❌ Vulnerable packages found!"
+          cat vulnerable-packages.txt
+          exit 1
+        else
+          echo "✅ No vulnerable packages found."
+        fi
+        
+    - name: Check for deprecated packages
+      run: |
+        echo "Scanning for deprecated NuGet packages..."
+        dotnet list package --deprecated --include-transitive 2>&1 | tee deprecated-packages.txt
+        
+        # This is informational only, don't fail the build
+        if grep -q "has the following deprecated packages" deprecated-packages.txt; then
+          echo "⚠️ Deprecated packages found (informational):"
+          cat deprecated-packages.txt
+        else
+          echo "✅ No deprecated packages found."
+        fi
+        
+    - name: Check for outdated packages
+      run: |
+        echo "Scanning for outdated NuGet packages..."
+        dotnet list package --outdated --include-transitive 2>&1 | tee outdated-packages.txt
+        
+        # This is informational only, don't fail the build
+        if grep -q "has the following outdated packages" outdated-packages.txt; then
+          echo "ℹ️ Outdated packages found (informational):"
+          cat outdated-packages.txt
+        else
+          echo "✅ All packages are up to date."
+        fi
+        
+    - name: Upload package security reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: dotnet-package-security-reports
+        path: |
+          vulnerable-packages.txt
+          deprecated-packages.txt
+          outdated-packages.txt
+        retention-days: 30
+        
+    - name: Create security summary
+      if: always()
+      run: |
+        echo "## .NET Package Security Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f vulnerable-packages.txt ] && grep -q "has the following vulnerable packages" vulnerable-packages.txt; then
+          echo "❌ **Vulnerable packages detected!**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat vulnerable-packages.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "✅ No vulnerable packages found" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f deprecated-packages.txt ] && grep -q "has the following deprecated packages" deprecated-packages.txt; then
+          echo "⚠️ **Deprecated packages found:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat deprecated-packages.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        fi
