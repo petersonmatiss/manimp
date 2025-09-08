@@ -1,8 +1,11 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using MudBlazor.Services;
 using Serilog;
 using Manimp.Web.Components;
 using Manimp.Directory.Data;
+using Manimp.Data.Contexts;
+using Manimp.Auth.Models;
 using Manimp.Shared.Interfaces;
 using Manimp.Services.Implementation;
 
@@ -26,6 +29,26 @@ builder.Services.AddMudServices();
 builder.Services.AddDbContext<DirectoryDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Directory")));
 
+// Add a dummy tenant DbContext for Identity registration (this will be replaced per-request)
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=DummyTenant;Trusted_Connection=true;MultipleActiveResultSets=true"));
+
+// Add Identity services
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    // Configure password requirements
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = true;
+    options.Password.RequiredLength = 6;
+    
+    // Configure user requirements
+    options.User.RequireUniqueEmail = true;
+})
+.AddEntityFrameworkStores<AppDbContext>()
+.AddDefaultTokenProviders();
+
 // Register services
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ICompanyRegistrationService, CompanyRegistrationService>();
@@ -45,6 +68,9 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
