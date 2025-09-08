@@ -1,0 +1,124 @@
+name: Deploy to Azure
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  AZURE_WEBAPP_NAME: 'manimp'  # Replace with your Azure Web App name
+  AZURE_WEBAPP_PACKAGE_PATH: './publish'
+
+jobs:
+  deploy-staging:
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: 
+      name: staging
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    
+    steps:
+    - name: Download artifact from build job
+      if: github.event.workflow_run.conclusion == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: web-app-${{ github.event.workflow_run.head_sha }}
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        run-id: ${{ github.event.workflow_run.id }}
+        
+    - name: Checkout and build (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Build and publish (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        dotnet restore
+        dotnet publish Manimp.Web/Manimp.Web.csproj --configuration Release --output ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} --no-restore
+        
+    - name: Deploy to Azure Web App (Staging)
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}-staging
+        slot-name: 'staging'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_STAGING }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        
+    - name: Run Database Migrations
+      env:
+        AZURE_SQL_CONNECTION_STRING: ${{ secrets.AZURE_SQL_CONNECTION_STRING_STAGING }}
+      run: |
+        echo "Database migrations would run here"
+        echo "dotnet ef database update --context DirectoryDbContext --connection-string '$AZURE_SQL_CONNECTION_STRING'"
+        
+  deploy-production:
+    if: (github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch') && (github.event.inputs.environment == 'production' || github.event_name != 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    needs: deploy-staging
+    
+    steps:
+    - name: Download artifact from build job
+      if: github.event.workflow_run.conclusion == 'success'
+      uses: actions/download-artifact@v4
+      with:
+        name: web-app-${{ github.event.workflow_run.head_sha }}
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        repository: ${{ github.repository }}
+        run-id: ${{ github.event.workflow_run.id }}
+        
+    - name: Checkout and build (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Build and publish (manual dispatch)
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        dotnet restore
+        dotnet publish Manimp.Web/Manimp.Web.csproj --configuration Release --output ${{ env.AZURE_WEBAPP_PACKAGE_PATH }} --no-restore
+        
+    - name: Deploy to Azure Web App (Production)
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: ${{ env.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+        
+    - name: Run Database Migrations
+      env:
+        AZURE_SQL_CONNECTION_STRING: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+      run: |
+        echo "Database migrations would run here"
+        echo "dotnet ef database update --context DirectoryDbContext --connection-string '$AZURE_SQL_CONNECTION_STRING'"

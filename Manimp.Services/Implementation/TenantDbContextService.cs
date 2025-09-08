@@ -18,7 +18,7 @@ public class TenantDbContextService : ITenantDbContext
         // 1. Look up the tenant in the directory database
         // 2. Get the database name and connection info
         // 3. Retrieve secrets from a secure store (Azure Key Vault, etc.)
-        
+
         var tenantTemplate = _configuration.GetConnectionString("TenantTemplate");
         if (string.IsNullOrEmpty(tenantTemplate))
         {

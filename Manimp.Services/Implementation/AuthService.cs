@@ -14,7 +14,7 @@ public class AuthService : IAuthService
     private readonly ITenantDbContext _tenantDbContext;
 
     public AuthService(
-        UserManager<ApplicationUser> userManager, 
+        UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         ITenantDbContext tenantDbContext)
     {
@@ -27,34 +27,34 @@ public class AuthService : IAuthService
     {
         // Switch to tenant database context
         var connectionString = _tenantDbContext.GetConnectionString(tenantId);
-        
+
         // Create tenant-specific DbContext
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlServer(connectionString)
             .Options;
 
         using var tenantDb = new AppDbContext(options);
-        
+
         var user = await tenantDb.Users.FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpperInvariant());
         if (user == null) return false;
 
         // Verify password
         var passwordHasher = new PasswordHasher<ApplicationUser>();
         var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash!, password);
-        
+
         return result == PasswordVerificationResult.Success;
     }
 
     public async Task<string> CreateUserAsync(CreateUserRequest request, Guid tenantId)
     {
         var connectionString = _tenantDbContext.GetConnectionString(tenantId);
-        
+
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlServer(connectionString)
             .Options;
 
         using var tenantDb = new AppDbContext(options);
-        
+
         var user = new ApplicationUser
         {
             UserName = request.Email,

@@ -66,7 +66,7 @@ public class AuthController : ControllerBase
             }
 
             var userId = await _authService.CreateUserAsync(request, tenantId);
-            
+
             // Add user to directory
             await _tenantService.AddUserToDirectoryAsync(request.Email.ToUpperInvariant(), tenantId);
 
