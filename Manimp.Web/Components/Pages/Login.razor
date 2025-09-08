@@ -1,0 +1,122 @@
+@page "/login"
+@rendermode InteractiveServer
+@inject ITenantService TenantService
+@inject IAuthService AuthService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Sign In - Manimp</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-6">
+    <MudPaper Class="pa-6" Elevation="2">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-6" Color="Color.Primary">
+            <MudIcon Icon="@Icons.Material.Filled.Login" Size="Size.Large" Class="mr-2" />
+            Sign In
+        </MudText>
+
+        <MudForm @ref="form" @bind-IsValid="@isFormValid">
+            <MudTextField @bind-Value="request.Email"
+                          Label="Email"
+                          Required="true"
+                          RequiredError="Email is required"
+                          Validation="@(new EmailAddressAttribute() {ErrorMessage = "Please enter a valid email address"})"
+                          Class="mb-4" />
+
+            <MudTextField @bind-Value="request.Password"
+                          Label="Password"
+                          InputType="@passwordInputType"
+                          Required="true"
+                          RequiredError="Password is required"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@passwordIcon"
+                          OnAdornmentClick="TogglePasswordVisibility"
+                          AdornmentAriaLabel="Show Password"
+                          Class="mb-4" />
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Size="Size.Large"
+                       FullWidth="true"
+                       OnClick="LoginUser"
+                       Disabled="@(!isFormValid || isLoading)"
+                       Class="mb-4">
+                @if (isLoading)
+                {
+                    <MudProgressCircular Color="Color.Secondary" Size="Size.Small" Indeterminate="true" />
+                    <MudText Class="ml-2">Signing in...</MudText>
+                }
+                else
+                {
+                    <MudText>Sign In</MudText>
+                }
+            </MudButton>
+        </MudForm>
+
+        <MudDivider Class="mb-4" />
+
+        <MudText Align="Align.Center" Typo="Typo.body2">
+            Don't have an account?
+            <MudLink Href="/register" Color="Color.Primary">Register your company here</MudLink>
+        </MudText>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private MudForm form = null!;
+    private bool isFormValid;
+    private bool isLoading;
+    private bool showPassword;
+    
+    private LoginRequest request = new();
+    
+    private InputType passwordInputType => showPassword ? InputType.Text : InputType.Password;
+    private string passwordIcon => showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility;
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private async Task LoginUser()
+    {
+        if (!isFormValid) return;
+
+        isLoading = true;
+        try
+        {
+            // Get tenant IDs for this email
+            var normalizedEmail = request.Email.ToUpperInvariant();
+            var tenantIds = await TenantService.GetTenantIdsByEmailAsync(normalizedEmail);
+
+            if (!tenantIds.Any())
+            {
+                Snackbar.Add("Invalid email or password", Severity.Error);
+                return;
+            }
+
+            // Try to authenticate against each tenant
+            foreach (var tenantId in tenantIds)
+            {
+                var isValid = await AuthService.ValidateUserAsync(request.Email, request.Password, tenantId);
+                if (isValid)
+                {
+                    Snackbar.Add("Login successful!", Severity.Success);
+                    
+                    // Navigate to dashboard - for now, just show success
+                    Navigation.NavigateTo("/dashboard");
+                    return;
+                }
+            }
+
+            Snackbar.Add("Invalid email or password", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Login failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

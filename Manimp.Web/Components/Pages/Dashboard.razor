@@ -1,0 +1,48 @@
+@page "/dashboard"
+
+<PageTitle>Dashboard - Manimp</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-6">
+    <MudText Typo="Typo.h3" Class="mb-6" Color="Color.Primary">
+        <MudIcon Icon="@Icons.Material.Filled.Dashboard" Size="Size.Large" Class="mr-2" />
+        Dashboard
+    </MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="6" lg="4">
+            <MudCard Class="pa-4">
+                <MudText Typo="Typo.h6" Color="Color.Primary">Welcome to Manimp</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    You have successfully logged into your company's Manimp workspace.
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4" Href="/users">
+                    Manage Users
+                </MudButton>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="6" lg="4">
+            <MudCard Class="pa-4">
+                <MudText Typo="Typo.h6" Color="Color.Info">Projects (Coming Soon)</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    Manage your metal fabrication projects.
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="mt-4" Disabled="true">
+                    View Projects
+                </MudButton>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" md="6" lg="4">
+            <MudCard Class="pa-4">
+                <MudText Typo="Typo.h6" Color="Color.Info">Inventory (Coming Soon)</MudText>
+                <MudText Typo="Typo.body2" Class="mt-2">
+                    Track profiles, sheets, and materials.
+                </MudText>
+                <MudButton Variant="Variant.Outlined" Color="Color.Info" Class="mt-4" Disabled="true">
+                    View Inventory
+                </MudButton>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</MudContainer>

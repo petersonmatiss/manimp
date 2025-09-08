@@ -1,0 +1,139 @@
+@page "/users"
+@rendermode InteractiveServer
+@inject IAuthService AuthService
+@inject ITenantService TenantService
+@inject ISnackbar Snackbar
+
+<PageTitle>User Management - Manimp</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="pa-6">
+    <MudText Typo="Typo.h3" Class="mb-6" Color="Color.Primary">
+        <MudIcon Icon="@Icons.Material.Filled.People" Size="Size.Large" Class="mr-2" />
+        User Management
+    </MudText>
+
+    <MudGrid>
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-6" Elevation="2">
+                <MudText Typo="Typo.h5" Class="mb-4" Color="Color.Primary">
+                    Add New User
+                </MudText>
+
+                <MudForm @ref="form" @bind-IsValid="@isFormValid">
+                    <MudTextField @bind-Value="newUser.Email"
+                                  Label="Email"
+                                  Required="true"
+                                  RequiredError="Email is required"
+                                  Validation="@(new EmailAddressAttribute() {ErrorMessage = "Please enter a valid email address"})"
+                                  Class="mb-4" />
+
+                    <MudTextField @bind-Value="newUser.FirstName"
+                                  Label="First Name"
+                                  Class="mb-4" />
+
+                    <MudTextField @bind-Value="newUser.LastName"
+                                  Label="Last Name"
+                                  Class="mb-4" />
+
+                    <MudTextField @bind-Value="newUser.Password"
+                                  Label="Password"
+                                  InputType="@passwordInputType"
+                                  Required="true"
+                                  RequiredError="Password is required"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@passwordIcon"
+                                  OnAdornmentClick="TogglePasswordVisibility"
+                                  AdornmentAriaLabel="Show Password"
+                                  Class="mb-4" />
+
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="CreateUser"
+                               Disabled="@(!isFormValid || isLoading)"
+                               Class="mb-4">
+                        @if (isLoading)
+                        {
+                            <MudProgressCircular Color="Color.Secondary" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ml-2">Creating...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>Create User</MudText>
+                        }
+                    </MudButton>
+                </MudForm>
+            </MudPaper>
+        </MudItem>
+        
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-6" Elevation="2">
+                <MudText Typo="Typo.h5" Class="mb-4" Color="Color.Primary">
+                    Instructions
+                </MudText>
+                
+                <MudStack Spacing="3">
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Info">
+                        Enter the user's email address and basic information
+                    </MudAlert>
+                    <MudAlert Severity="Severity.Warning" Icon="@Icons.Material.Filled.Security">
+                        Set a temporary password - users should change it on first login
+                    </MudAlert>
+                    <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.Email">
+                        The user will be able to login using their email address
+                    </MudAlert>
+                    <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Shield">
+                        User data is isolated within your company's tenant
+                    </MudAlert>
+                </MudStack>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    private MudForm form = null!;
+    private bool isFormValid;
+    private bool isLoading;
+    private bool showPassword;
+    
+    private CreateUserRequest newUser = new();
+    
+    // For simplicity, we're using a fixed tenant ID - in a real app, this would come from authentication context
+    private Guid currentTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    
+    private InputType passwordInputType => showPassword ? InputType.Text : InputType.Password;
+    private string passwordIcon => showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility;
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private async Task CreateUser()
+    {
+        if (!isFormValid) return;
+
+        isLoading = true;
+        try
+        {
+            var userId = await AuthService.CreateUserAsync(newUser, currentTenantId);
+            
+            // Add user to directory
+            await TenantService.AddUserToDirectoryAsync(newUser.Email.ToUpperInvariant(), currentTenantId);
+            
+            Snackbar.Add($"User '{newUser.Email}' created successfully!", Severity.Success);
+            
+            // Reset form
+            newUser = new CreateUserRequest();
+            await form.ResetAsync();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"User creation failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

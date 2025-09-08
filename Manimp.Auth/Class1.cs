@@ -1,6 +1,10 @@
-﻿namespace Manimp.Auth;
+﻿using Microsoft.AspNetCore.Identity;
 
-public class Class1
+namespace Manimp.Auth.Models;
+
+public class ApplicationUser : IdentityUser
 {
-
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
 }
