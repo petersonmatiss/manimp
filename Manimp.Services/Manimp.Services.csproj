@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Manimp.Directory\Manimp.Directory.csproj" />
+    <ProjectReference Include="..\Manimp.Data\Manimp.Data.csproj" />
+    <ProjectReference Include="..\Manimp.Auth\Manimp.Auth.csproj" />
+    <ProjectReference Include="..\Manimp.Shared\Manimp.Shared.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
