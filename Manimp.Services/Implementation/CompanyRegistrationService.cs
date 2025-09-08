@@ -36,7 +36,7 @@ public class CompanyRegistrationService : ICompanyRegistrationService
 
             // Add user to directory
             await _tenantService.AddUserToDirectoryAsync(
-                request.AdminEmail.ToUpperInvariant(), 
+                request.AdminEmail.ToUpperInvariant(),
                 tenant.TenantId);
 
             // Role assignment will be implemented when role management is added

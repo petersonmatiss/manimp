@@ -72,7 +72,7 @@ public class TenantService : ITenantService
     {
         var adminConnectionString = _configuration.GetConnectionString("SqlServerAdmin");
         var tenantTemplate = _configuration.GetConnectionString("TenantTemplate");
-        
+
         if (string.IsNullOrEmpty(adminConnectionString) || string.IsNullOrEmpty(tenantTemplate))
         {
             throw new InvalidOperationException("Database connection strings not configured");
@@ -81,14 +81,14 @@ public class TenantService : ITenantService
         // Create database using admin connection
         using var adminConnection = new Microsoft.Data.SqlClient.SqlConnection(adminConnectionString);
         await adminConnection.OpenAsync();
-        
+
         var createDbCommand = new Microsoft.Data.SqlClient.SqlCommand(
             $"CREATE DATABASE [{tenant.DbName}]", adminConnection);
         await createDbCommand.ExecuteNonQueryAsync();
 
         // Run migrations on the new tenant database
         var tenantConnectionString = tenantTemplate.Replace("{DB}", tenant.DbName);
-        
+
         // Run EF migrations on the new tenant database
         await RunTenantMigrationsAsync(tenantConnectionString);
     }

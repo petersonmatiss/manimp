@@ -28,7 +28,7 @@ public class CompanyController : ControllerBase
             }
 
             var tenantId = await _companyRegistrationService.RegisterCompanyAsync(request);
-            
+
             return Ok(new { TenantId = tenantId, Message = "Company registered successfully" });
         }
         catch (Exception ex)
