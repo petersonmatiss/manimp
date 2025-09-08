@@ -18,7 +18,7 @@ on:
         - production
 
 env:
-  REGISTRY_NAME: 'manimpregistry'  # Replace with your ACR name
+  REGISTRY_NAME: ${{ secrets.ACR_REGISTRY_NAME }}  # Set in GitHub secrets: ACR_REGISTRY_NAME
   IMAGE_NAME: 'manimp-web'
   CONTAINER_APP_NAME: 'manimp-app'
   RESOURCE_GROUP: 'manimp-rg'
