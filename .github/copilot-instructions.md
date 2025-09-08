@@ -94,7 +94,7 @@ cd ../Manimp.Directory && dotnet list reference
 
 #### Build the Solution
 ```bash
-#### Full solution build - Takes approximately 10-15 seconds. NEVER CANCEL.
+# Full solution build - Takes approximately 10-15 seconds. NEVER CANCEL.
 dotnet build --configuration Release
 # Set timeout to 30+ seconds for safety
 ```
