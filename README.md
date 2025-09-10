@@ -180,6 +180,68 @@ See [`docs/azure-deployment.md`](docs/azure-deployment.md) for complete deployme
 - Regular security updates and vulnerability scanning
 - Network security groups and firewalls
 
+#### Security Scanning & CI/CD Security
+
+The repository includes comprehensive automated security scanning as part of the CI/CD pipeline:
+
+##### 🛡️ Security Workflows
+
+1. **Main CI Security Scan** (`.github/workflows/ci.yml`)
+   - **Filesystem Scanning**: Detects vulnerabilities in code and dependencies
+   - **Secret Detection**: Scans for hardcoded secrets and credentials
+   - **Critical Failure Policy**: Pipeline fails on CRITICAL or HIGH severity vulnerabilities
+   - **SARIF Upload**: Results uploaded to GitHub Security tab for tracking
+   - **Required for Deployment**: Security scan must pass before artifacts can be published
+
+2. **.NET Package Security** (`.github/workflows/dotnet-security.yml`)
+   - **NuGet Vulnerability Scanning**: Checks for vulnerable package dependencies
+   - **Deprecated Package Detection**: Identifies deprecated packages (informational)
+   - **Outdated Package Reporting**: Reports outdated dependencies (informational)
+   - **Weekly Scheduled Scans**: Runs automatically every Sunday at 2 AM UTC
+   - **Build Failure**: Pipeline fails if vulnerable packages are detected
+
+3. **Container Security Scanning** (`.github/workflows/deploy-container-apps.yml`)
+   - **Docker Image Scanning**: Scans built container images for vulnerabilities
+   - **Base Image Vulnerabilities**: Detects issues in Microsoft base images
+   - **Required for Deployment**: Container security scan must pass before deployment
+   - **Multi-Environment**: Scans applied to both staging and production deployments
+
+##### 🔧 Trivy Scanner Configuration
+
+- **Scan Types**: Filesystem, secrets, container images
+- **Severity Levels**: CRITICAL, HIGH, MEDIUM (with different failure policies)
+- **Exit Policies**: 
+  - Filesystem scan: Fails on CRITICAL, HIGH, MEDIUM
+  - Secret scan: Fails on any secrets detected
+  - Container scan: Fails on CRITICAL, HIGH
+- **Reporting**: SARIF format for GitHub Security integration + human-readable reports
+
+##### 📊 Security Reports
+
+Security scan results are available in multiple formats:
+- **GitHub Security Tab**: SARIF results for code scanning alerts
+- **Build Artifacts**: Human-readable reports for debugging
+- **Job Summaries**: Quick overview in GitHub Actions UI
+- **Pull Request Comments**: Security findings (when applicable)
+
+##### 🚫 Security Policy
+
+- **Zero Tolerance**: No critical vulnerabilities allowed in main/develop branches
+- **Automated Enforcement**: CI/CD pipeline automatically blocks vulnerable code
+- **Regular Scanning**: Weekly automated scans for new vulnerabilities
+- **Dependency Management**: Proactive monitoring of package vulnerabilities
+- **Container Security**: All deployed images must pass security scans
+
+##### 🔄 Vulnerability Response
+
+1. **Detection**: Automated scans detect vulnerabilities
+2. **Blocking**: CI/CD prevents deployment of vulnerable code
+3. **Notification**: Developers notified via GitHub Security alerts
+4. **Remediation**: Update vulnerable dependencies or apply security patches
+5. **Verification**: Re-run security scans to confirm fixes
+
+This multi-layered security approach ensures that both the codebase and deployed applications maintain high security standards throughout the development lifecycle.
+
 ## Development
 
 ### Prerequisites

@@ -10,16 +10,16 @@ namespace Manimp.Services.Implementation;
 public class AuthService : IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
+    // private readonly SignInManager<ApplicationUser> _signInManager; // TODO: Implement when needed
     private readonly ITenantDbContext _tenantDbContext;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager,
+        // SignInManager<ApplicationUser> signInManager, // TODO: Implement when needed
         ITenantDbContext tenantDbContext)
     {
         _userManager = userManager;
-        _signInManager = signInManager;
+        // _signInManager = signInManager; // TODO: Implement when needed
         _tenantDbContext = tenantDbContext;
     }
 

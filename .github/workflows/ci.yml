@@ -76,23 +76,65 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Run Trivy vulnerability scanner
+    # Scan filesystem and dependencies for vulnerabilities
+    - name: Run Trivy vulnerability scanner (Filesystem)
       uses: aquasecurity/trivy-action@master
       with:
         scan-type: 'fs'
         scan-ref: '.'
         format: 'sarif'
-        output: 'trivy-results.sarif'
+        output: 'trivy-fs-results.sarif'
+        severity: 'CRITICAL,HIGH,MEDIUM'
+        exit-code: '1'  # Fail on any vulnerabilities found
         
-    - name: Upload Trivy scan results
+    # Scan for secrets in the codebase
+    - name: Run Trivy secret scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        scanners: 'secret'
+        format: 'sarif'
+        output: 'trivy-secrets-results.sarif'
+        exit-code: '1'  # Fail on any secrets found
+        
+    # Generate human-readable reports for easier debugging
+    - name: Run Trivy vulnerability scanner (Table output)
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'table'
+        output: 'trivy-report.txt'
+        severity: 'CRITICAL,HIGH,MEDIUM'
+        
+    # Upload detailed scan results to GitHub Security
+    - name: Upload Trivy filesystem scan results
       if: always()
       uses: github/codeql-action/upload-sarif@v3
       with:
-        sarif_file: 'trivy-results.sarif'
+        sarif_file: 'trivy-fs-results.sarif'
+        category: 'trivy-filesystem'
+        
+    - name: Upload Trivy secrets scan results
+      if: always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-secrets-results.sarif'
+        category: 'trivy-secrets'
+        
+    # Upload human-readable report as artifact for debugging
+    - name: Upload Trivy report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: trivy-security-report
+        path: trivy-report.txt
+        retention-days: 30
         
   publish-artifacts:
     runs-on: ubuntu-latest
-    needs: [build-and-test, code-quality]
+    needs: [build-and-test, code-quality, security-scan]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     
     steps:
