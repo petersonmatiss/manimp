@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Manimp.Auth.Models;
 using Manimp.Data.Contexts;
 using Manimp.Shared.Interfaces;
@@ -9,40 +11,38 @@ namespace Manimp.Services.Implementation;
 
 public class AuthService : IAuthService
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    // private readonly SignInManager<ApplicationUser> _signInManager; // TODO: Implement when needed
+    private readonly IServiceProvider _serviceProvider;
     private readonly ITenantDbContext _tenantDbContext;
 
     public AuthService(
-        UserManager<ApplicationUser> userManager,
-        // SignInManager<ApplicationUser> signInManager, // TODO: Implement when needed
+        IServiceProvider serviceProvider,
         ITenantDbContext tenantDbContext)
     {
-        _userManager = userManager;
-        // _signInManager = signInManager; // TODO: Implement when needed
+        _serviceProvider = serviceProvider;
         _tenantDbContext = tenantDbContext;
     }
 
     public async Task<bool> ValidateUserAsync(string email, string password, Guid tenantId)
     {
-        // Switch to tenant database context
         var connectionString = _tenantDbContext.GetConnectionString(tenantId);
 
-        // Create tenant-specific DbContext
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseSqlServer(connectionString)
             .Options;
 
         using var tenantDb = new AppDbContext(options);
 
-        var user = await tenantDb.Users.FirstOrDefaultAsync(u => u.NormalizedEmail == email.ToUpperInvariant());
+        using var scope = _serviceProvider.CreateScope();
+
+        var userStore = new UserStore<ApplicationUser>(tenantDb);
+        var userManager = ActivatorUtilities.CreateInstance<UserManager<ApplicationUser>>(scope.ServiceProvider, userStore);
+        var signInManager = ActivatorUtilities.CreateInstance<SignInManager<ApplicationUser>>(scope.ServiceProvider, userManager);
+
+        var user = await userManager.FindByEmailAsync(email);
         if (user == null) return false;
 
-        // Verify password
-        var passwordHasher = new PasswordHasher<ApplicationUser>();
-        var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash!, password);
-
-        return result == PasswordVerificationResult.Success;
+        var result = await signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: false);
+        return result.Succeeded;
     }
 
     public async Task<string> CreateUserAsync(CreateUserRequest request, Guid tenantId)

@@ -1,4 +1,7 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Manimp.Auth.Models;
+using Manimp.Data.Contexts;
 using Manimp.Directory.Data;
 using Manimp.Shared.Interfaces;
 using Manimp.Services.Implementation;
@@ -13,6 +16,12 @@ builder.Services.AddSwaggerGen();
 // Add DbContext for Directory
 builder.Services.AddDbContext<DirectoryDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Directory")));
+
+builder.Services.AddDbContextFactory<AppDbContext>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddIdentityCore<ApplicationUser>()
+    .AddSignInManager();
+builder.Services.AddAuthentication();
 
 // Register services
 builder.Services.AddScoped<ITenantService, TenantService>();
