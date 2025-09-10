@@ -29,7 +29,8 @@ builder.Services.AddMudServices();
 builder.Services.AddDbContext<DirectoryDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Directory")));
 
-builder.Services.AddDbContextFactory<AppDbContext>();
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("AppDb")));
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddIdentityCore<ApplicationUser>()
     .AddSignInManager();
