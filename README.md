@@ -40,11 +40,12 @@ Manimp/
 - **User Management**: Admin can add users within tenant
 - **Landing Page**: Feature overview and privacy information
 - **Clean Architecture**: Template artifacts removed, proper file naming
+- **Tier 1 Core Inventory Schema**: Baseline inventory management with lookup tables, profile tracking, and usage logging
 
 ### 🚧 Coming Next
+- **Inventory UI**: User interface for managing profiles, materials, and usage
 - **Projects**: Project management and tracking
-- **Inventory**: Profiles, sheets, and materials management
-- **Purchasing**: POs, invoices, and GRNs
+- **Purchasing**: POs, invoices, and GRNs (Tier 2+ inventory features)
 - **Production**: Manufacturing and quality control
 
 ## Database Schema
@@ -68,7 +69,34 @@ UserDirectory
 ### Tenant Database (Per Company)
 - Standard ASP.NET Core Identity tables
 - ApplicationUser extends IdentityUser with FirstName, LastName, CreatedUtc
-- Future business tables (isolated per tenant)
+
+#### Tier 1 Core Inventory Schema
+**Lookup Tables:**
+- **MaterialTypes**: Steel material classifications (structural, plate, etc.)
+- **ProfileTypes**: Profile shapes (W-beam, channel, angle, etc.) 
+- **SteelGrades**: Steel specifications (A992, A36, A572-50, etc.)
+
+**Core Inventory:**
+- **ProfileInventory**: Individual lots/sticks with pieces tracking
+  - LotNumber, Size (e.g. W12x26), Length, PiecesOnHand, OriginalPieces
+  - WeightPerPiece, UnitCost, ReceivedDate, Location, Notes
+  - Links to MaterialType, ProfileType, SteelGrade, Supplier, Certificate
+  - RowVersion for concurrency control
+- **ProfileUsageLog**: Usage tracking and inventory decrements
+  - PiecesUsed, LengthUsed, UsedDate, Purpose, UsedBy, Notes
+  - Links to ProfileInventory and optional Project
+  - Automatic decrement from ProfileInventory.PiecesOnHand
+
+**Supporting Entities:**
+- **Suppliers**: Vendor information for tagging lots
+- **Projects**: Basic project info for usage tracking
+- **Documents**: Certificate storage (mill certs, test reports, etc.)
+
+**Features:**
+- Optimistic concurrency with RowVersion
+- Restrict deletions on lookup tables to preserve data integrity
+- Cascade delete usage logs when inventory is deleted
+- Forward-compatible schema for Tier 2+ features (POs, remnants, pricing)
 
 ## Configuration
 
