@@ -275,6 +275,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         // Indexes for performance
         entity.HasIndex(e => e.LotNumber);
         entity.HasIndex(e => new { e.MaterialTypeId, e.ProfileTypeId, e.SteelGradeId });
+        entity.HasIndex(e => e.ReceivedDate);
+        entity.HasIndex(e => e.Location);
+        entity.HasIndex(e => new { e.SupplierId, e.ReceivedDate });
+        entity.HasIndex(e => new { e.PurchaseOrderId, e.ReceivedDate });
+        entity.HasIndex(e => new { e.ProjectId, e.ReceivedDate });
     }
 
     /// <summary>
@@ -304,6 +309,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         // Indexes for performance
         entity.HasIndex(e => e.UsedDate);
         entity.HasIndex(e => e.ProfileInventoryId);
+        entity.HasIndex(e => new { e.ProjectId, e.UsedDate });
+        entity.HasIndex(e => e.UsedBy);
     }
 
     /// <summary>
