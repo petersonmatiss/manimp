@@ -199,7 +199,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Location).HasMaxLength(100);
             entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.RowVersion).IsRowVersion();
-            
+
             // Tier 2 Procurement and Project tracking properties
             entity.Property(e => e.PONumber).HasMaxLength(50);
 
