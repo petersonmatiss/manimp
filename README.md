@@ -43,6 +43,7 @@ Manimp/
 - **Tier 1 Core Inventory Schema**: Baseline inventory management with lookup tables, profile tracking, and usage logging
 - **Tier 2 Procurement and Remnants Module**: Advanced procurement tracking with POs, automated remnant creation, and full material lineage
 - **Tier 3 Sourcing Module**: Price request and quote workflow for RFQ management and procurement planning
+- **Feature Gating System**: Subscription-based feature access control with three-tier plans and override support
 
 ### 🚧 Coming Next
 - **Inventory UI**: User interface for managing profiles, materials, and usage
@@ -68,6 +69,48 @@ UserDirectory
 ├── Id (int, PK, identity)
 ├── NormalizedEmail (nvarchar(256), indexed)
 └── TenantId (uniqueidentifier, FK)
+
+Plans
+├── PlanId (int, PK, identity)
+├── Name (nvarchar(100), unique)
+├── Description (nvarchar(500))
+├── TierLevel (int)
+├── IsActive (bit)
+└── CreatedUtc (datetime2)
+
+Features
+├── FeatureId (int, PK, identity)
+├── FeatureKey (nvarchar(100), unique)
+├── Name (nvarchar(200))
+├── Description (nvarchar(500))
+├── Category (nvarchar(100))
+├── IsActive (bit)
+└── CreatedUtc (datetime2)
+
+PlanFeatures
+├── PlanFeatureId (int, PK, identity)
+├── PlanId (int, FK → Plans)
+├── FeatureId (int, FK → Features)
+├── IsEnabled (bit)
+└── CreatedUtc (datetime2)
+
+TenantSubscriptions
+├── TenantSubscriptionId (int, PK, identity)
+├── TenantId (uniqueidentifier, FK → Tenants)
+├── PlanId (int, FK → Plans)
+├── StartDate (datetime2)
+├── EndDate (datetime2, nullable)
+├── IsActive (bit)
+└── CreatedUtc (datetime2)
+
+TenantFeatureOverrides
+├── TenantFeatureOverrideId (int, PK, identity)
+├── TenantId (uniqueidentifier, FK → Tenants)
+├── FeatureId (int, FK → Features)
+├── IsEnabled (bit)
+├── Reason (nvarchar(500))
+├── ExpiresUtc (datetime2, nullable)
+└── CreatedUtc (datetime2)
 ```
 
 ### Tenant Database (Per Company)
@@ -163,6 +206,99 @@ UserDirectory
 - Price request lines can be converted to purchase order lines for streamlined procurement
 - Sourcing history is maintained for vendor performance analysis
 - Quote comparison features enable cost optimization
+
+## Feature Gating System
+
+### Subscription Plans
+
+The feature gating system controls access to inventory module tiers based on tenant subscription plans:
+
+#### Basic Plan (Tier 1)
+- **Core Inventory Management**: Basic inventory tracking and management
+- **Profile Management**: Manage material profiles and specifications
+- **Usage Tracking**: Track material usage and consumption
+- **Material Lookups**: Access to material type, profile, and grade lookups
+
+#### Professional Plan (Tier 2)
+- **All Basic Plan features** plus:
+- **Procurement Management**: Advanced procurement tracking and management
+- **Purchase Orders**: Create and manage purchase orders
+- **Remnant Tracking**: Automated tracking of material remnants
+- **Procurement Reports**: Advanced reporting for procurement activities
+
+#### Enterprise Plan (Tier 3)
+- **All Professional Plan features** plus:
+- **Sourcing Management**: Strategic sourcing and vendor management
+- **Price Requests**: Request for quote (RFQ) management
+- **Quote Management**: Manage vendor quotes and comparisons
+- **Vendor Comparison**: Compare vendors and pricing across quotes
+- **Sourcing Reports**: Advanced reporting for sourcing activities
+- **Project Management**: Enhanced project management and tracking
+- **Quality Control**: Quality control and inspection management
+- **Production Tracking**: Manufacturing and production tracking
+
+### Feature Override System
+
+Individual tenants can have feature overrides for:
+- **Trial Access**: Temporary access to higher-tier features
+- **Custom Agreements**: Special feature access based on contracts
+- **Beta Testing**: Early access to new features
+- **Granular Control**: Enable/disable specific features regardless of plan
+
+### Implementation
+
+The feature gating system is implemented through:
+
+- **IFeatureGate Service**: Centralized feature access checking
+- **RequireFeature Attribute**: Declarative API endpoint protection
+- **FeatureGate Middleware**: Automatic middleware-based feature gating
+- **Frontend Integration**: UI components show/hide based on feature access
+- **Database-Driven**: All feature definitions stored in database
+- **Tenant Isolation**: Complete separation of tenant feature access
+
+### Usage Examples
+
+#### API Controller Protection
+```csharp
+[HttpGet("purchase-orders")]
+[RequireFeature(FeatureKeys.PurchaseOrders)]
+public IActionResult GetPurchaseOrders()
+{
+    // Only accessible to Professional and Enterprise plans
+}
+
+[HttpGet("sourcing")]
+[RequireFeature(FeatureKeys.SourcingManagement, HideWhenDisabled = true)]
+public IActionResult GetSourcing()
+{
+    // Returns 404 for unauthorized tenants (hidden feature)
+}
+```
+
+#### Service-Level Checking
+```csharp
+public async Task<bool> CanAccessFeature(Guid tenantId, string featureKey)
+{
+    return await _featureGate.IsFeatureEnabledAsync(tenantId, featureKey);
+}
+```
+
+#### Frontend Feature Gating
+```razor
+@if (await FeatureGate.IsFeatureEnabledAsync(TenantId, FeatureKeys.PurchaseOrders))
+{
+    <MudButton>Purchase Orders</MudButton>
+}
+```
+
+### Demonstration
+
+A complete feature gating demonstration is available:
+- **Console Demo**: Run `dotnet run` in `FeatureGatingDemo/` project
+- **Web Demo**: Navigate to `/features` page in the web application
+- **API Demo**: Test API endpoints with different tenant contexts
+
+The demo shows how tenants with different subscription plans have varying access to inventory features, with override capabilities for custom requirements.
 
 ## Configuration
 
