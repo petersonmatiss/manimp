@@ -48,10 +48,14 @@
                                                 <MudText Typo="Typo.caption" Color="Color.Secondary">@GetFeatureDescription(feature.Key)</MudText>
                                             </div>
                                         </div>
-                                        <MudBadge Color="@(feature.Value ? Color.Success : Color.Error)"
-                                                  Badged="true">
-                                            <MudText Typo="Typo.caption">@(feature.Value ? "Enabled" : "Disabled")</MudText>
-                                        </MudBadge>
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@(feature.Value ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
+                                                     Color="@(feature.Value ? Color.Success : Color.Error)" 
+                                                     Class="mr-2" />
+                                            <MudText Typo="Typo.caption" Color="@(feature.Value ? Color.Success : Color.Error)">
+                                                @(feature.Value ? "Enabled" : "Disabled")
+                                            </MudText>
+                                        </div>
                                     </div>
                                 }
                             </div>
@@ -79,10 +83,14 @@
                                                 <MudText Typo="Typo.caption" Color="Color.Secondary">@GetFeatureDescription(feature.Key)</MudText>
                                             </div>
                                         </div>
-                                        <MudBadge Color="@(feature.Value ? Color.Success : Color.Error)"
-                                                  Badged="true">
-                                            <MudText Typo="Typo.caption">@(feature.Value ? "Enabled" : "Disabled")</MudText>
-                                        </MudBadge>
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@(feature.Value ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
+                                                     Color="@(feature.Value ? Color.Success : Color.Error)" 
+                                                     Class="mr-2" />
+                                            <MudText Typo="Typo.caption" Color="@(feature.Value ? Color.Success : Color.Error)">
+                                                @(feature.Value ? "Enabled" : "Disabled")
+                                            </MudText>
+                                        </div>
                                     </div>
                                 }
                             </div>
@@ -110,10 +118,14 @@
                                                 <MudText Typo="Typo.caption" Color="Color.Secondary">@GetFeatureDescription(feature.Key)</MudText>
                                             </div>
                                         </div>
-                                        <MudBadge Color="@(feature.Value ? Color.Success : Color.Error)"
-                                                  Badged="true">
-                                            <MudText Typo="Typo.caption">@(feature.Value ? "Enabled" : "Disabled")</MudText>
-                                        </MudBadge>
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@(feature.Value ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
+                                                     Color="@(feature.Value ? Color.Success : Color.Error)" 
+                                                     Class="mr-2" />
+                                            <MudText Typo="Typo.caption" Color="@(feature.Value ? Color.Success : Color.Error)">
+                                                @(feature.Value ? "Enabled" : "Disabled")
+                                            </MudText>
+                                        </div>
                                     </div>
                                 }
                             </div>

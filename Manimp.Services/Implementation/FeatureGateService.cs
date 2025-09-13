@@ -51,8 +51,8 @@ public class FeatureGateService : IFeatureGate
         // Check for tenant-specific override first
         var override_ = await _directoryDb.TenantFeatureOverrides
             .Include(tfo => tfo.Feature)
-            .FirstOrDefaultAsync(tfo => 
-                tfo.TenantId == tenantId && 
+            .FirstOrDefaultAsync(tfo =>
+                tfo.TenantId == tenantId &&
                 tfo.Feature.FeatureKey == featureKey &&
                 tfo.Feature.IsActive &&
                 (tfo.ExpiresUtc == null || tfo.ExpiresUtc > DateTime.UtcNow));
@@ -75,13 +75,13 @@ public class FeatureGateService : IFeatureGate
 
         // Check tenant subscription and plan features
         var planFeature = await _directoryDb.TenantSubscriptions
-            .Where(ts => 
-                ts.TenantId == tenantId && 
+            .Where(ts =>
+                ts.TenantId == tenantId &&
                 ts.IsActive &&
                 (ts.EndDate == null || ts.EndDate > DateTime.UtcNow))
-            .Join(_directoryDb.PlanFeatures, 
-                ts => ts.PlanId, 
-                pf => pf.PlanId, 
+            .Join(_directoryDb.PlanFeatures,
+                ts => ts.PlanId,
+                pf => pf.PlanId,
                 (ts, pf) => new { ts, pf })
             .Join(_directoryDb.Features,
                 x => x.pf.FeatureId,
@@ -149,7 +149,7 @@ public class FeatureGateService : IFeatureGate
         // Get tenant overrides
         var overrides = await _directoryDb.TenantFeatureOverrides
             .Include(tfo => tfo.Feature)
-            .Where(tfo => 
+            .Where(tfo =>
                 tfo.TenantId == tenantId &&
                 tfo.Feature.IsActive &&
                 (tfo.ExpiresUtc == null || tfo.ExpiresUtc > DateTime.UtcNow))
@@ -157,13 +157,13 @@ public class FeatureGateService : IFeatureGate
 
         // Get plan features from active subscriptions
         var planFeatures = await _directoryDb.TenantSubscriptions
-            .Where(ts => 
-                ts.TenantId == tenantId && 
+            .Where(ts =>
+                ts.TenantId == tenantId &&
                 ts.IsActive &&
                 (ts.EndDate == null || ts.EndDate > DateTime.UtcNow))
-            .Join(_directoryDb.PlanFeatures, 
-                ts => ts.PlanId, 
-                pf => pf.PlanId, 
+            .Join(_directoryDb.PlanFeatures,
+                ts => ts.PlanId,
+                pf => pf.PlanId,
                 (ts, pf) => new { ts, pf })
             .Join(_directoryDb.Features,
                 x => x.pf.FeatureId,

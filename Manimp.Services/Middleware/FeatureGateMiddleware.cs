@@ -54,10 +54,10 @@ public class FeatureGateMiddleware
         try
         {
             var isFeatureEnabled = await featureGate.IsFeatureEnabledAsync(tenantId.Value, requireFeatureAttribute.FeatureKey);
-            
+
             if (!isFeatureEnabled)
             {
-                _logger.LogInformation("Feature gate denied access to {FeatureKey} for tenant {TenantId} on path {Path}", 
+                _logger.LogInformation("Feature gate denied access to {FeatureKey} for tenant {TenantId} on path {Path}",
                     requireFeatureAttribute.FeatureKey, tenantId, context.Request.Path);
 
                 if (requireFeatureAttribute.HideWhenDisabled)
@@ -73,14 +73,14 @@ public class FeatureGateMiddleware
                 return;
             }
 
-            _logger.LogDebug("Feature gate allowed access to {FeatureKey} for tenant {TenantId}", 
+            _logger.LogDebug("Feature gate allowed access to {FeatureKey} for tenant {TenantId}",
                 requireFeatureAttribute.FeatureKey, tenantId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking feature gate for {FeatureKey} and tenant {TenantId}", 
+            _logger.LogError(ex, "Error checking feature gate for {FeatureKey} and tenant {TenantId}",
                 requireFeatureAttribute.FeatureKey, tenantId);
-            
+
             // Fail closed - deny access on error
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync("Internal Server Error");
@@ -112,7 +112,7 @@ public class FeatureGateMiddleware
         {
             var normalizedEmail = emailClaim.Value.ToUpperInvariant();
             var tenantIds = await tenantService.GetTenantIdsByEmailAsync(normalizedEmail);
-            
+
             if (tenantIds.Count == 1)
             {
                 return tenantIds[0];

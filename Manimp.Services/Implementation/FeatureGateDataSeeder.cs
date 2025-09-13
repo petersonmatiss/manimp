@@ -28,13 +28,13 @@ public class FeatureGateDataSeeder
         {
             await SeedFeaturesAsync();
             await _directoryDb.SaveChangesAsync();
-            
+
             await SeedPlansAsync();
             await _directoryDb.SaveChangesAsync();
-            
+
             await SeedPlanFeaturesAsync();
             await _directoryDb.SaveChangesAsync();
-            
+
             _logger.LogInformation("Feature gating data seeded successfully");
         }
         catch (Exception ex)
@@ -176,7 +176,7 @@ public class FeatureGateDataSeeder
         {
             var existing = await _directoryDb.Features
                 .FirstOrDefaultAsync(f => f.FeatureKey == feature.FeatureKey);
-            
+
             if (existing == null)
             {
                 _directoryDb.Features.Add(feature);
@@ -216,7 +216,7 @@ public class FeatureGateDataSeeder
         {
             var existing = await _directoryDb.Plans
                 .FirstOrDefaultAsync(p => p.Name == plan.Name);
-            
+
             if (existing == null)
             {
                 _directoryDb.Plans.Add(plan);
@@ -294,7 +294,7 @@ public class FeatureGateDataSeeder
                 {
                     var existing = await _directoryDb.PlanFeatures
                         .FirstOrDefaultAsync(pf => pf.PlanId == plan.PlanId && pf.FeatureId == feature.FeatureId);
-                    
+
                     if (existing == null)
                     {
                         _directoryDb.PlanFeatures.Add(new PlanFeature
@@ -303,7 +303,7 @@ public class FeatureGateDataSeeder
                             FeatureId = feature.FeatureId,
                             IsEnabled = true
                         });
-                        
+
                         _logger.LogDebug("Added feature {FeatureKey} to plan {PlanName}", featureKey, plan.Name);
                     }
                 }
@@ -326,7 +326,7 @@ public class FeatureGateDataSeeder
 
         var existingSubscription = await _directoryDb.TenantSubscriptions
             .FirstOrDefaultAsync(ts => ts.TenantId == tenantId && ts.IsActive);
-        
+
         if (existingSubscription == null)
         {
             _directoryDb.TenantSubscriptions.Add(new TenantSubscription
@@ -336,7 +336,7 @@ public class FeatureGateDataSeeder
                 StartDate = DateTime.UtcNow,
                 IsActive = true
             });
-            
+
             await _directoryDb.SaveChangesAsync();
             _logger.LogInformation("Assigned Basic plan to tenant {TenantId}", tenantId);
         }

@@ -22,16 +22,16 @@ public class Program
                 .Options;
 
             using var dbContext = new DirectoryDbContext(options);
-            
+
             // Seed initial data
-            var seeder = new FeatureGateDataSeeder(dbContext, 
+            var seeder = new FeatureGateDataSeeder(dbContext,
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<FeatureGateDataSeeder>.Instance);
-            
+
             try
             {
                 await seeder.SeedInitialDataAsync();
                 Console.WriteLine("✅ Seeded feature gating data successfully");
-                
+
                 // Verify seeding worked
                 var planCount = await dbContext.Plans.CountAsync();
                 var featureCount = await dbContext.Features.CountAsync();
@@ -46,9 +46,9 @@ public class Program
 
             // Create demo tenants with different subscription plans
             var tenants = await CreateDemoTenantsAsync(dbContext, seeder);
-            
+
             // Create feature gate service
-            var featureGate = new FeatureGateService(dbContext, 
+            var featureGate = new FeatureGateService(dbContext,
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<FeatureGateService>.Instance);
 
             // Demonstrate feature checking for each tenant
@@ -72,16 +72,16 @@ public class Program
 
         // Create tenants for each plan type
         var plans = await dbContext.Plans.ToListAsync();
-        
+
         if (!plans.Any())
         {
             throw new InvalidOperationException("No plans found. Ensure seeding completed successfully.");
         }
-        
+
         foreach (var plan in plans)
         {
             var tenantId = Guid.NewGuid();
-            
+
             var tenant = new Tenant
             {
                 TenantId = tenantId,
@@ -171,17 +171,17 @@ public class Program
         foreach (var tenantId in tenantIds)
         {
             Console.WriteLine($"📋 Tenant: {tenantId}");
-            
+
             var allFeatures = await featureGate.GetTenantFeatureStatusesAsync(tenantId);
-            
+
             foreach (var feature in testFeatures)
             {
                 if (allFeatures.TryGetValue(feature, out var status))
                 {
                     var enabledIcon = status.IsEnabled ? "✅" : "❌";
-                    var sourceInfo = status.Source == "Override" ? " (Override)" : 
+                    var sourceInfo = status.Source == "Override" ? " (Override)" :
                                    status.Source == "Plan" ? " (Plan)" : " (Default)";
-                    
+
                     Console.WriteLine($"   {enabledIcon} {GetFeatureName(feature)}{sourceInfo}");
                 }
             }
@@ -190,7 +190,7 @@ public class Program
 
         // Demonstrate middleware-like functionality
         Console.WriteLine("🚪 Testing Middleware-like Feature Checks...\n");
-        
+
         var firstTenant = tenantIds.First();
         await TestFeatureAccessScenarios(featureGate, firstTenant);
     }
@@ -210,7 +210,7 @@ public class Program
             var isEnabled = await featureGate.IsFeatureEnabledAsync(tenantId, featureKey);
             var result = isEnabled ? "ALLOWED" : "DENIED";
             var icon = isEnabled ? "✅" : "❌";
-            
+
             Console.WriteLine($"   {icon} {description}: {result}");
         }
     }

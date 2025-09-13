@@ -27,7 +27,7 @@ public class RequireFeatureAttribute : Attribute
     {
         if (string.IsNullOrWhiteSpace(featureKey))
             throw new ArgumentException("Feature key cannot be null or empty", nameof(featureKey));
-        
+
         FeatureKey = featureKey;
     }
 }

@@ -11,7 +11,7 @@ public class DirectoryDbContext : DbContext
 
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<UserDirectory> UserDirectory { get; set; }
-    
+
     // Feature Gating tables
     public DbSet<Plan> Plans { get; set; }
     public DbSet<Feature> Features { get; set; }
