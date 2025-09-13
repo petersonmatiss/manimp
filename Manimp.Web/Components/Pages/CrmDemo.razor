@@ -1,0 +1,230 @@
+@page "/crm-demo"
+@using Manimp.Shared.Models
+
+<PageTitle>CRM Module Demo</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-6">
+    <MudGrid>
+        <MudItem xs="12">
+            <MudPaper Class="pa-6">
+                <MudText Typo="Typo.h3" Class="mb-4">CRM Module Demo</MudText>
+                <MudText Typo="Typo.h6" Class="mb-6" Color="Color.Secondary">
+                    Comprehensive Customer Relationship Management for Metal Projects
+                </MudText>
+
+                <MudGrid>
+                    <!-- Customer Management Section -->
+                    <MudItem xs="12" md="6">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Customer Management</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.People" Color="Color.Primary" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    Manage customers, contacts, and company information with complete data isolation.
+                                </MudText>
+                                <MudStack Spacing="2">
+                                    <MudText>• Company profiles with billing & delivery addresses</MudText>
+                                    <MudText>• Multiple contacts per customer with roles</MudText>
+                                    <MudText>• Complete interaction history and notes</MudText>
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Launch">
+                                    View Customers
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+
+                    <!-- Project Management Section -->
+                    <MudItem xs="12" md="6">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Project Management</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Folder" Color="Color.Secondary" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    Enhanced project tracking with delivery rules and progress monitoring.
+                                </MudText>
+                                <MudStack Spacing="2">
+                                    <MudText>• Project-specific delivery addresses & rules</MudText>
+                                    <MudText>• Real-time progress tracking</MudText>
+                                    <MudText>• Assembly lists and manufacturing status</MudText>
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Launch">
+                                    View Projects
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+
+                    <!-- Assembly & Parts Management -->
+                    <MudItem xs="12" md="6">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Assembly & Parts</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Build" Color="Color.Tertiary" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    Complete assembly management with parts tracking and BOM management.
+                                </MudText>
+                                <MudStack Spacing="2">
+                                    <MudText>• Assembly lists with manufacturing progress</MudText>
+                                    <MudText>• Parts, bolts, and component management</MudText>
+                                    <MudText>• Optimized cutting lists with traceability</MudText>
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Launch">
+                                    View Assemblies
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+
+                    <!-- File Upload & AI Features -->
+                    <MudItem xs="12" md="6">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Tiered File Upload</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Success" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    Subscription-based file upload capabilities with AI-powered parsing.
+                                </MudText>
+                                <MudStack Spacing="2">
+                                    <MudText><strong>Tier 1:</strong> Manual input only</MudText>
+                                    <MudText><strong>Tier 2:</strong> Excel upload with manual column mapping</MudText>
+                                    <MudText><strong>Tier 3:</strong> AI-powered column detection & parsing</MudText>
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Success" StartIcon="@Icons.Material.Filled.Launch">
+                                    Upload Files
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+
+                    <!-- Delivery & Outsourcing -->
+                    <MudItem xs="12" md="6">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Delivery & Outsourcing</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Info" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    Complete logistics management with outsourcing support.
+                                </MudText>
+                                <MudStack Spacing="2">
+                                    <MudText>• Auto-generated packing lists</MudText>
+                                    <MudText>• Outsourcing management & tracking</MudText>
+                                    <MudText>• Coating management & application tracking</MudText>
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Launch">
+                                    View Deliveries
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+
+                    <!-- Feature Gating -->
+                    <MudItem xs="12" md="6">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">Feature Gating</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Security" Color="Color.Warning" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudText Typo="Typo.body2" Class="mb-2">
+                                    Subscription-based feature access with granular control.
+                                </MudText>
+                                <MudStack Spacing="2">
+                                    <MudText>• 17 new CRM feature flags</MudText>
+                                    <MudText>• Three-tier subscription model</MudText>
+                                    <MudText>• Per-tenant feature overrides</MudText>
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Launch" Href="/features">
+                                    View Features
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+
+                <MudDivider Class="my-6" />
+
+                <!-- Implementation Status -->
+                <MudText Typo="Typo.h5" Class="mb-4">Implementation Status</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="4">
+                        <MudAlert Severity="Severity.Success" Icon="@Icons.Material.Filled.CheckCircle">
+                            <strong>✅ Completed:</strong><br />
+                            Data Models (16 entities)<br />
+                            Business Services<br />
+                            Feature Gating Integration<br />
+                            Database Migrations
+                        </MudAlert>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudAlert Severity="Severity.Info" Icon="@Icons.Material.Filled.Engineering">
+                            <strong>🔄 In Progress:</strong><br />
+                            Web UI Components<br />
+                            File Upload Interface<br />
+                            Navigation & Routing
+                        </MudAlert>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudAlert Severity="Severity.Warning" Icon="@Icons.Material.Filled.Schedule">
+                            <strong>⏳ Pending:</strong><br />
+                            Multi-tenant Testing<br />
+                            AI Integration Setup<br />
+                            End-to-end Workflows
+                        </MudAlert>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudContainer>
+
+@code {
+    // This is a demo page showing the CRM module capabilities
+    // The actual functionality will be implemented in dedicated pages
+}

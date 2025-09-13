@@ -276,8 +276,30 @@ public static class FeatureKeys
     public const string VendorComparison = "vendor_comparison";
     public const string SourcingReports = "sourcing_reports";
 
+    // CRM Module Features
+    public const string CrmModule = "crm_module";
+    public const string CustomerManagement = "customer_management";
+    public const string ContactManagement = "contact_management";
+    public const string CrmProjectManagement = "crm_project_management";
+    public const string AssemblyManagement = "assembly_management";
+    public const string PartManagement = "part_management";
+    public const string BoltManagement = "bolt_management";
+    public const string CoatingManagement = "coating_management";
+    public const string OutsourcingManagement = "outsourcing_management";
+    public const string CuttingListOptimization = "cutting_list_optimization";
+    public const string DeliveryManagement = "delivery_management";
+    public const string PackingListGeneration = "packing_list_generation";
+    
+    // Tiered File Upload Features
+    public const string AssemblyListUpload = "assembly_list_upload";
+    public const string AssemblyListUploadTier2 = "assembly_list_upload_tier2"; // Manual column mapping
+    public const string AssemblyListUploadTier3 = "assembly_list_upload_tier3"; // AI-powered parsing
+    
+    // Manufacturing Progress Tracking
+    public const string ManufacturingProgress = "manufacturing_progress";
+    public const string ProgressReporting = "progress_reporting";
+
     // Future module placeholders
-    public const string ProjectManagement = "project_management";
     public const string QualityControl = "quality_control";
     public const string ProductionTracking = "production_tracking";
 }
