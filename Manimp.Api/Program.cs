@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Manimp.Directory.Data;
 using Manimp.Shared.Interfaces;
 using Manimp.Services.Implementation;
+using Manimp.Services.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,7 @@ builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ICompanyRegistrationService, CompanyRegistrationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITenantDbContext, TenantDbContextService>();
+builder.Services.AddScoped<IFeatureGate, FeatureGateService>();
 
 var app = builder.Build();
 
@@ -31,6 +33,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseRouting();
+
+// Add feature gate middleware (before controllers)
+app.UseFeatureGate();
+
 app.MapControllers();
 
 app.Run();

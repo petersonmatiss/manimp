@@ -27,7 +27,11 @@ public class FeatureGateDataSeeder
         try
         {
             await SeedFeaturesAsync();
+            await _directoryDb.SaveChangesAsync();
+            
             await SeedPlansAsync();
+            await _directoryDb.SaveChangesAsync();
+            
             await SeedPlanFeaturesAsync();
             await _directoryDb.SaveChangesAsync();
             

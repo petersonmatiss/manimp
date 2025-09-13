@@ -5,6 +5,7 @@ using Manimp.Web.Components;
 using Manimp.Directory.Data;
 using Manimp.Shared.Interfaces;
 using Manimp.Services.Implementation;
+using Manimp.Services.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +32,8 @@ builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<ICompanyRegistrationService, CompanyRegistrationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITenantDbContext, TenantDbContextService>();
+builder.Services.AddScoped<IFeatureGate, FeatureGateService>();
+builder.Services.AddScoped<FeatureGateDataSeeder>();
 
 // Add health checks for container deployment
 builder.Services.AddHealthChecks()
@@ -48,6 +51,10 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Add feature gate middleware (before routing and authorization)
+app.UseFeatureGate();
+
 app.UseAntiforgery();
 
 // Add health check endpoints for container deployment
@@ -57,5 +64,12 @@ app.MapHealthChecks("/health/live");
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+// Seed feature gating data on startup
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<FeatureGateDataSeeder>();
+    await seeder.SeedInitialDataAsync();
+}
 
 app.Run();
