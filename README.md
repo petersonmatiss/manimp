@@ -41,11 +41,13 @@ Manimp/
 - **Landing Page**: Feature overview and privacy information
 - **Clean Architecture**: Template artifacts removed, proper file naming
 - **Tier 1 Core Inventory Schema**: Baseline inventory management with lookup tables, profile tracking, and usage logging
+- **Tier 2 Procurement and Remnants Module**: Advanced procurement tracking with POs, automated remnant creation, and full material lineage
 
 ### 🚧 Coming Next
 - **Inventory UI**: User interface for managing profiles, materials, and usage
-- **Projects**: Project management and tracking
-- **Purchasing**: POs, invoices, and GRNs (Tier 2+ inventory features)
+- **Procurement UI**: User interface for purchase orders and supplier management
+- **Projects**: Enhanced project management and tracking features
+- **Remnants UI**: Interface for managing and utilizing remnant inventory
 - **Production**: Manufacturing and quality control
 
 ## Database Schema
@@ -97,6 +99,38 @@ UserDirectory
 - Restrict deletions on lookup tables to preserve data integrity
 - Cascade delete usage logs when inventory is deleted
 - Forward-compatible schema for Tier 2+ features (POs, remnants, pricing)
+
+### Tier 2 Procurement and Remnants Module
+
+**New Entities (Advanced Subscriptions):**
+- **PurchaseOrder**: Procurement tracking with supplier links
+  - PONumber, OrderDate, Expected/ActualDeliveryDate, TotalAmount, Status
+  - Links to Supplier, contains multiple PurchaseOrderLines
+  - Unique PO numbers with date-based indexing
+- **PurchaseOrderLine**: Individual line items on purchase orders
+  - LineNumber, Size, Length, Quantity, UnitPrice, LineTotal, Description
+  - Links to PurchaseOrder, MaterialType, ProfileType, SteelGrade
+  - Enables detailed procurement specifications
+- **ProfileRemnantInventory**: Automated remnant tracking
+  - RemnantLotNumber (auto-generated), RemainingLength, RemnantPieces
+  - CreatedDate, Location, IsAvailable status
+  - Links to OriginalProfileInventory and ProfileUsageLog that created it
+  - Automatic creation when material usage leaves leftover length
+
+**ProfileInventory Enhancements:**
+- Added **PurchaseOrderId** (nullable): Links inventory to originating purchase order
+- Added **PONumber** (nullable): Reference PO number for manual tracking  
+- Added **ProjectId** (nullable): Direct project association for inventory items
+
+**Procurement Lineage:**
+- Full traceability: PurchaseOrder → ProfileInventory → ProfileUsageLog → ProfileRemnantInventory
+- Procurement costs can be tracked through to final usage and remnants
+- Material certificates can be linked at PO or inventory level
+
+**Remnant Automation:**
+- When ProfileUsageLog is created with partial material usage, ProfileRemnantInventory is automatically generated
+- Remnants maintain full material specifications and traceability to original lot
+- Available remnants can be used for future projects, reducing waste
 
 ## Configuration
 

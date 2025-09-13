@@ -59,6 +59,22 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     /// </summary>
     public DbSet<ProfileUsageLog> ProfileUsageLogs { get; set; }
 
+    // Tier 2 Procurement and Remnants DbSets
+    /// <summary>
+    /// Gets or sets the purchase orders
+    /// </summary>
+    public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+
+    /// <summary>
+    /// Gets or sets the purchase order lines
+    /// </summary>
+    public DbSet<PurchaseOrderLine> PurchaseOrderLines { get; set; }
+
+    /// <summary>
+    /// Gets or sets the profile remnant inventories
+    /// </summary>
+    public DbSet<ProfileRemnantInventory> ProfileRemnantInventories { get; set; }
+
     /// <summary>
     /// Configures the model that was discovered by convention from the entity types
     /// </summary>
@@ -74,6 +90,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         ConfigureInventoryLookupTables(modelBuilder);
         ConfigureSupportingEntities(modelBuilder);
         ConfigureCoreInventoryEntities(modelBuilder);
+
+        // Apply Tier 2 Procurement and Remnants Model Configuration
+        ApplyInventoryProcurementAndRemnantsModel(modelBuilder);
     }
 
     /// <summary>
@@ -181,6 +200,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Notes).HasMaxLength(1000);
             entity.Property(e => e.RowVersion).IsRowVersion();
 
+            // Tier 2 Procurement and Project tracking properties
+            entity.Property(e => e.PONumber).HasMaxLength(50);
+
             ConfigureProfileInventoryRelationships(entity);
             ConfigureProfileInventoryIndexes(entity);
         });
@@ -231,6 +253,17 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
               .WithMany(d => d.ProfileInventories)
               .HasForeignKey(e => e.CertificateDocumentId)
               .OnDelete(DeleteBehavior.SetNull);
+
+        // Tier 2 Procurement and Project relationships
+        entity.HasOne(e => e.PurchaseOrder)
+              .WithMany(po => po.ProfileInventories)
+              .HasForeignKey(e => e.PurchaseOrderId)
+              .OnDelete(DeleteBehavior.SetNull);
+
+        entity.HasOne(e => e.Project)
+              .WithMany(p => p.ProfileInventories)
+              .HasForeignKey(e => e.ProjectId)
+              .OnDelete(DeleteBehavior.SetNull);
     }
 
     /// <summary>
@@ -242,6 +275,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         // Indexes for performance
         entity.HasIndex(e => e.LotNumber);
         entity.HasIndex(e => new { e.MaterialTypeId, e.ProfileTypeId, e.SteelGradeId });
+        entity.HasIndex(e => e.ReceivedDate);
+        entity.HasIndex(e => e.Location);
+        entity.HasIndex(e => new { e.SupplierId, e.ReceivedDate });
+        entity.HasIndex(e => new { e.PurchaseOrderId, e.ReceivedDate });
+        entity.HasIndex(e => new { e.ProjectId, e.ReceivedDate });
     }
 
     /// <summary>
@@ -271,5 +309,98 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         // Indexes for performance
         entity.HasIndex(e => e.UsedDate);
         entity.HasIndex(e => e.ProfileInventoryId);
+        entity.HasIndex(e => new { e.ProjectId, e.UsedDate });
+        entity.HasIndex(e => e.UsedBy);
+    }
+
+    /// <summary>
+    /// Applies Tier 2 Procurement and Remnants model configuration
+    /// </summary>
+    /// <param name="modelBuilder">The model builder</param>
+    private static void ApplyInventoryProcurementAndRemnantsModel(ModelBuilder modelBuilder)
+    {
+        // Configure PurchaseOrder
+        modelBuilder.Entity<PurchaseOrder>(entity =>
+        {
+            entity.HasKey(e => e.PurchaseOrderId);
+            entity.Property(e => e.PONumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            // Relationships
+            entity.HasOne(e => e.Supplier)
+                  .WithMany(s => s.PurchaseOrders)
+                  .HasForeignKey(e => e.SupplierId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            // Indexes
+            entity.HasIndex(e => e.PONumber).IsUnique();
+            entity.HasIndex(e => e.OrderDate);
+        });
+
+        // Configure PurchaseOrderLine
+        modelBuilder.Entity<PurchaseOrderLine>(entity =>
+        {
+            entity.HasKey(e => e.PurchaseOrderLineId);
+            entity.Property(e => e.Size).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Length).HasColumnType("decimal(10,3)");
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.LineTotal).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            // Relationships
+            entity.HasOne(e => e.PurchaseOrder)
+                  .WithMany(po => po.PurchaseOrderLines)
+                  .HasForeignKey(e => e.PurchaseOrderId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.MaterialType)
+                  .WithMany(mt => mt.PurchaseOrderLines)
+                  .HasForeignKey(e => e.MaterialTypeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ProfileType)
+                  .WithMany(pt => pt.PurchaseOrderLines)
+                  .HasForeignKey(e => e.ProfileTypeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.SteelGrade)
+                  .WithMany(sg => sg.PurchaseOrderLines)
+                  .HasForeignKey(e => e.SteelGradeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(e => new { e.PurchaseOrderId, e.LineNumber }).IsUnique();
+        });
+
+        // Configure ProfileRemnantInventory
+        modelBuilder.Entity<ProfileRemnantInventory>(entity =>
+        {
+            entity.HasKey(e => e.ProfileRemnantInventoryId);
+            entity.Property(e => e.RemnantLotNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.RemainingLength).HasColumnType("decimal(10,3)");
+            entity.Property(e => e.Location).HasMaxLength(100);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            // Relationships
+            entity.HasOne(e => e.OriginalProfileInventory)
+                  .WithMany(pi => pi.ProfileRemnantInventories)
+                  .HasForeignKey(e => e.OriginalProfileInventoryId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ProfileUsageLog)
+                  .WithMany(pul => pul.ProfileRemnantInventories)
+                  .HasForeignKey(e => e.ProfileUsageLogId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(e => e.RemnantLotNumber).IsUnique();
+            entity.HasIndex(e => e.CreatedDate);
+            entity.HasIndex(e => e.IsAvailable);
+        });
     }
 }
