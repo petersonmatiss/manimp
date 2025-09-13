@@ -44,7 +44,7 @@ Manimp/
 - **Tier 2 Procurement and Remnants Module**: Advanced procurement tracking with POs, automated remnant creation, and full material lineage
 - **Tier 3 Sourcing Module**: Price request and quote workflow for RFQ management and procurement planning
 - **Feature Gating System**: Subscription-based feature access control with three-tier plans and override support
-- **EN 1090 Compliance**: Steel construction manufacturing compliance system with execution class determination, material traceability, project tier mapping, and monthly project limits
+- **EN 1090 Compliance**: Steel construction manufacturing compliance system with subscription-tier based feature access, execution class validation, material traceability, and monthly project limits
 
 ### 🚧 Coming Next
 - **Inventory UI**: User interface for managing profiles, materials, and usage
@@ -256,29 +256,39 @@ The feature gating system uses:
 
 ## EN 1090 Compliance System
 
-The EN 1090 compliance system ensures structural steelwork projects meet European standards for execution of steel structures. This comprehensive module provides full traceability, quality control, and documentation management.
+The EN 1090 compliance system ensures structural steelwork projects meet European standards for execution of steel structures. This comprehensive module provides full traceability, quality control, and documentation management based on tenant subscription tiers.
 
-### Project Tier System
+### Subscription Tier System
 
-Projects are automatically classified into tiers based on EN 1090 Execution Class (EXC):
+EN 1090 features are gated by tenant subscription tiers, determining which execution classes and compliance features are available:
 
-#### Tier 1: EXC1 & EXC2 (Basic Structural Work)
-- **Requirements**: Standard documentation, basic material traceability
-- **Certificates**: EN 10204 2.1 minimum
-- **Welding**: Standard procedures
-- **Use Cases**: Simple buildings, basic structural components
+#### Basic Tier (Tier 1)
+- **Allowed Execution Classes**: EXC1 only
+- **Requirements**: Basic documentation, standard procedures
+- **Certificates**: EN 10204 2.1 minimum (optional)
+- **Features**: Basic inventory, simple project tracking
+- **Use Cases**: Simple structural components, basic buildings
 
-#### Tier 2: EXC3 (Enhanced Quality Requirements)  
-- **Requirements**: Enhanced documentation, batch tracking mandatory
-- **Certificates**: EN 10204 3.1 minimum
-- **Welding**: Qualified procedures required
-- **Use Cases**: Bridges, industrial buildings, critical structures
+#### Professional Tier (Tier 2) 
+- **Allowed Execution Classes**: EXC1, EXC2, EXC3
+- **Requirements**: Enhanced documentation, batch tracking mandatory for EXC2-EXC3
+- **Certificates**: EN 10204 3.1 minimum for EXC2-EXC3
+- **Features**: Full inventory management, procurement features, advanced project tracking
+- **Use Cases**: Bridges, industrial buildings, most commercial structures
 
-#### Tier 3: EXC4 (Highest Quality Standards)
+#### Enterprise Tier (Tier 3)
+- **Allowed Execution Classes**: All classes (EXC1, EXC2, EXC3, EXC4)
 - **Requirements**: Complete traceability, country of origin tracking
-- **Certificates**: EN 10204 3.2 required
-- **Welding**: Fully qualified procedures with PQR
+- **Certificates**: EN 10204 3.2 required for EXC4
+- **Features**: Full CRM, sourcing management, complete compliance suite, advanced analytics
 - **Use Cases**: Petrochemical plants, seismic zones, critical infrastructure
+
+### Subscription-Based Access Control
+
+- Tenant subscription tier determines available execution classes
+- Real-time validation prevents creating projects beyond subscription tier
+- Material compliance requirements scale with subscription tier
+- Feature access controlled through centralized feature gating system
 
 ### Material Traceability
 
@@ -308,21 +318,21 @@ Projects are automatically classified into tiers based on EN 1090 Execution Clas
 ### Compliance Validation
 
 **Real-time validation services:**
-- `IEN1090ComplianceService` - Validates material compliance for each tier
-- Automatic tier-specific requirement checking
+- `IEN1090ComplianceService` - Validates material compliance for each subscription tier
+- Automatic subscription tier-based requirement checking
 - Certificate type validation against execution class requirements
 - Missing data identification for compliance gaps
 
 **Validation Rules:**
-- **Tier 1**: Basic validation, optional certificates
-- **Tier 2**: Material batch required, certificate 3.1+ required
-- **Tier 3**: All fields required, certificate 3.2 mandatory, country of origin required
+- **Basic Tier**: Minimal validation, basic documentation
+- **Professional Tier**: Material batch required for EXC2-EXC3, certificate 3.1+ required
+- **Enterprise Tier**: All fields required, certificate 3.2 mandatory, country of origin required
 
 ### User Interface
 
 **Project Management (`/projects/en1090`):**
 - Project creation with execution class selection
-- Automatic tier calculation and requirement display
+- Subscription tier requirement display and validation
 - Monthly project limit tracking with addon purchase option
 - Compliance requirements display for each tier
 
