@@ -45,6 +45,16 @@ public class Supplier
     /// Gets the purchase orders from this supplier
     /// </summary>
     public ICollection<PurchaseOrder> PurchaseOrders { get; set; } = new HashSet<PurchaseOrder>();
+
+    /// <summary>
+    /// Gets the price requests for this supplier
+    /// </summary>
+    public ICollection<PriceRequest> PriceRequests { get; set; } = new HashSet<PriceRequest>();
+
+    /// <summary>
+    /// Gets the price quotes from this supplier
+    /// </summary>
+    public ICollection<PriceQuote> PriceQuotes { get; set; } = new HashSet<PriceQuote>();
 }
 
 /// <summary>
@@ -100,6 +110,11 @@ public class Project
     /// Gets the profile inventories directly associated with this project
     /// </summary>
     public ICollection<ProfileInventory> ProfileInventories { get; set; } = new HashSet<ProfileInventory>();
+
+    /// <summary>
+    /// Gets the price requests associated with this project
+    /// </summary>
+    public ICollection<PriceRequest> PriceRequests { get; set; } = new HashSet<PriceRequest>();
 }
 
 /// <summary>

@@ -42,10 +42,12 @@ Manimp/
 - **Clean Architecture**: Template artifacts removed, proper file naming
 - **Tier 1 Core Inventory Schema**: Baseline inventory management with lookup tables, profile tracking, and usage logging
 - **Tier 2 Procurement and Remnants Module**: Advanced procurement tracking with POs, automated remnant creation, and full material lineage
+- **Tier 3 Sourcing Module**: Price request and quote workflow for RFQ management and procurement planning
 
 ### 🚧 Coming Next
 - **Inventory UI**: User interface for managing profiles, materials, and usage
 - **Procurement UI**: User interface for purchase orders and supplier management
+- **Sourcing UI**: User interface for price requests and quote management
 - **Projects**: Enhanced project management and tracking features
 - **Remnants UI**: Interface for managing and utilizing remnant inventory
 - **Production**: Manufacturing and quality control
@@ -131,6 +133,36 @@ UserDirectory
 - When ProfileUsageLog is created with partial material usage, ProfileRemnantInventory is automatically generated
 - Remnants maintain full material specifications and traceability to original lot
 - Available remnants can be used for future projects, reducing waste
+
+### Tier 3 Sourcing Module
+
+**New Entities (Full Subscriptions):**
+- **PriceRequest**: Request for quotes (RFQ) management
+  - RequestNumber, RequestDate, RequiredByDate, Status, Notes
+  - Links to optional Supplier (for directed requests) and Project
+  - Status workflow: Draft → Sent → Quoted → Completed/Cancelled
+- **PriceRequestLine**: Individual line items on price requests
+  - LineNumber, Size, Length, Quantity, Description
+  - Links to PriceRequest, MaterialType, ProfileType, SteelGrade
+  - Enables detailed material specifications for quoting
+- **PriceQuote**: Supplier responses to price requests
+  - QuoteNumber, QuoteDate, ExpirationDate, TotalAmount, Status, Notes
+  - Links to PriceRequest and Supplier
+  - Status workflow: Received → Under Review → Accepted/Rejected/Expired
+
+**PurchaseOrderLine Enhancements:**
+- Added **PriceRequestLineId** (nullable): Links PO lines to originating price request lines
+
+**Sourcing Workflow:**
+- Complete RFQ process: PriceRequest → PriceRequestLine → PriceQuote → PurchaseOrderLine
+- Full traceability from initial material requirement through quote comparison to final procurement
+- Multiple suppliers can quote on the same price request for competitive pricing
+- Accepted quotes can be automatically converted to purchase orders
+
+**Integration with Procurement:**
+- Price request lines can be converted to purchase order lines for streamlined procurement
+- Sourcing history is maintained for vendor performance analysis
+- Quote comparison features enable cost optimization
 
 ## Configuration
 
