@@ -28,7 +28,7 @@ public class AssemblyListUploadService
         _logger = logger;
         
         // Set EPPlus license for non-commercial use
-        ExcelPackage.License = OfficeOpenXml.License.LicenseMode.NonCommercial;
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
     /// <summary>
