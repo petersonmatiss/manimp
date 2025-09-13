@@ -44,9 +44,9 @@ Manimp/
 - **Tier 2 Procurement and Remnants Module**: Advanced procurement tracking with POs, automated remnant creation, and full material lineage
 - **Tier 3 Sourcing Module**: Price request and quote workflow for RFQ management and procurement planning
 - **Feature Gating System**: Subscription-based feature access control with three-tier plans and override support
+- **EN 1090 Compliance**: Steel construction manufacturing compliance system with execution class determination, material traceability, project tier mapping, and monthly project limits
 
 ### 🚧 Coming Next
-- **EN 1090 Compliance**: Steel construction manufacturing compliance system with execution class determination, material traceability, welding management, and quality documentation
 - **Inventory UI**: User interface for managing profiles, materials, and usage
 - **Procurement UI**: User interface for purchase orders and supplier management
 - **Sourcing UI**: User interface for price requests and quote management
@@ -245,6 +245,125 @@ Individual tenants can have feature overrides for:
 - **Custom Agreements**: Special feature access based on contracts
 - **Beta Testing**: Early access to new features
 - **Granular Control**: Enable/disable specific features regardless of plan
+
+### Implementation
+
+The feature gating system uses:
+- **Central Directory Database**: Stores tenant subscriptions and feature definitions
+- **Service Layer**: `IFeatureGate` service validates tenant access to features
+- **Middleware**: `FeatureGateMiddleware` enforces feature access at the request level
+- **UI Components**: Feature-aware components show/hide functionality based on tenant permissions
+
+## EN 1090 Compliance System
+
+The EN 1090 compliance system ensures structural steelwork projects meet European standards for execution of steel structures. This comprehensive module provides full traceability, quality control, and documentation management.
+
+### Project Tier System
+
+Projects are automatically classified into tiers based on EN 1090 Execution Class (EXC):
+
+#### Tier 1: EXC1 & EXC2 (Basic Structural Work)
+- **Requirements**: Standard documentation, basic material traceability
+- **Certificates**: EN 10204 2.1 minimum
+- **Welding**: Standard procedures
+- **Use Cases**: Simple buildings, basic structural components
+
+#### Tier 2: EXC3 (Enhanced Quality Requirements)  
+- **Requirements**: Enhanced documentation, batch tracking mandatory
+- **Certificates**: EN 10204 3.1 minimum
+- **Welding**: Qualified procedures required
+- **Use Cases**: Bridges, industrial buildings, critical structures
+
+#### Tier 3: EXC4 (Highest Quality Standards)
+- **Requirements**: Complete traceability, country of origin tracking
+- **Certificates**: EN 10204 3.2 required
+- **Welding**: Fully qualified procedures with PQR
+- **Use Cases**: Petrochemical plants, seismic zones, critical infrastructure
+
+### Material Traceability
+
+**Enhanced ProfileInventory with EN 1090 fields:**
+- `MaterialBatch` - Heat/batch number for full material lineage
+- `MillTestCertificateNumber` - Mill test certificate reference
+- `CertificateType` - EN 10204 certificate type (2.1, 2.2, 3.1, 3.2)
+- `MaterialStandard` - Applicable standard (e.g., EN 10025-2)
+- `ManufacturingRoute` - Production method (Hot Rolled, Cold Formed)
+- `SurfaceCondition` - Material condition (As Rolled, Shot Blasted)
+- `CountryOfOrigin` - Required for EXC4 projects
+- `TraceabilityNotes` - Additional compliance documentation
+
+### Project Management Features
+
+**Enhanced Project model with compliance tracking:**
+- `ExecutionClass` - EN 1090 execution class (EXC1-EXC4)
+- `ProjectTier` - Automatically calculated from execution class
+- `CreatedMonth` - For monthly project limit tracking
+
+**Monthly Project Limits:**
+- Base limit: 10 projects per month per tenant
+- Addon purchases: Additional projects available for purchase
+- Automatic tracking: `TenantProjectLimit` tracks usage by month
+- Overflow protection: Project creation blocked when limit reached
+
+### Compliance Validation
+
+**Real-time validation services:**
+- `IEN1090ComplianceService` - Validates material compliance for each tier
+- Automatic tier-specific requirement checking
+- Certificate type validation against execution class requirements
+- Missing data identification for compliance gaps
+
+**Validation Rules:**
+- **Tier 1**: Basic validation, optional certificates
+- **Tier 2**: Material batch required, certificate 3.1+ required
+- **Tier 3**: All fields required, certificate 3.2 mandatory, country of origin required
+
+### User Interface
+
+**Project Management (`/projects/en1090`):**
+- Project creation with execution class selection
+- Automatic tier calculation and requirement display
+- Monthly project limit tracking with addon purchase option
+- Compliance requirements display for each tier
+
+**Material Traceability (`/inventory/en1090`):**
+- Enhanced material entry forms with all EN 1090 fields
+- Real-time compliance validation for all tiers
+- Material compliance indicators (✓/✗ for each tier)
+- Batch filtering and certificate type filtering
+
+### Database Schema
+
+**New/Enhanced Tables:**
+```sql
+-- Enhanced Projects table
+Projects
+├── ExecutionClass (nvarchar(10)) -- EXC1, EXC2, EXC3, EXC4
+├── ProjectTier (int, nullable) -- 1, 2, or 3
+└── CreatedMonth (nvarchar(7)) -- YYYY-MM format
+
+-- Enhanced ProfileInventories table  
+ProfileInventories
+├── MaterialBatch (nvarchar(100))
+├── MillTestCertificateNumber (nvarchar(100))
+├── CertificateType (nvarchar(10)) -- 2.1, 2.2, 3.1, 3.2
+├── MaterialStandard (nvarchar(50))
+├── ManufacturingRoute (nvarchar(50))
+├── SurfaceCondition (nvarchar(50))
+├── CountryOfOrigin (nvarchar(100))
+└── TraceabilityNotes (nvarchar(2000))
+
+-- New project limit tracking (Directory DB)
+TenantProjectLimits
+├── TenantProjectLimitId (int, PK, identity)
+├── TenantId (uniqueidentifier, FK → Tenants)
+├── Month (nvarchar(7)) -- YYYY-MM format
+├── ProjectsCreated (int)
+├── BaseLimit (int, default 10)
+├── AddonProjects (int, default 0)
+├── CreatedUtc (datetime2)
+└── UpdatedUtc (datetime2)
+```
 
 ### Implementation
 
