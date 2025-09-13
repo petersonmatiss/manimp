@@ -46,6 +46,7 @@ Manimp/
 - **Feature Gating System**: Subscription-based feature access control with three-tier plans and override support
 
 ### 🚧 Coming Next
+- **EN 1090 Compliance**: Steel construction manufacturing compliance system with execution class determination, material traceability, welding management, and quality documentation
 - **Inventory UI**: User interface for managing profiles, materials, and usage
 - **Procurement UI**: User interface for purchase orders and supplier management
 - **Sourcing UI**: User interface for price requests and quote management
@@ -508,6 +509,23 @@ dotnet test
 ```
 
 ## Support & Documentation
+
+### EN 1090 Steel Construction Compliance
+
+Comprehensive documentation for implementing EN 1090 compliance in steel construction manufacturing:
+
+#### 📋 Compliance Documentation
+- **[EN 1090 Compliance Guide](docs/en-1090-compliance.md)** - Complete overview of EN 1090 requirements, execution classes, welding standards, material traceability, and NDT requirements
+- **[EN 1090 Development Guide](docs/en-1090-development.md)** - Technical implementation requirements, database schemas, API specifications, and UI components
+- **[EN 1090 Quick Reference](docs/en-1090-quick-reference.md)** - Quick decision matrices, checklists, and common patterns for daily use
+
+#### 🎯 Key Features Covered
+- **Execution Classes (EXC1-EXC4)** - Automated determination based on project parameters
+- **CE Marking Requirements** - Declaration of Performance (DoP) and compliance documentation
+- **Material Traceability** - Certificate management and heat/batch tracking
+- **Welding Management** - WPS/WPQR procedures and welder qualifications
+- **Quality Control** - NDT planning, inspection management, and documentation
+- **Factory Production Control (FPC)** - AVCP system integration and audit support
 
 For technical support and detailed documentation, refer to:
 - Application logs (structured with Serilog)
