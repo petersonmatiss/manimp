@@ -35,6 +35,9 @@ public class TenantService : ITenantService
         // Create the actual database
         await CreateTenantDatabaseAsync(tenant);
 
+        // Assign default Basic plan to the new tenant
+        await AssignDefaultPlanAsync(tenant.TenantId);
+
         return tenant;
     }
 
@@ -98,5 +101,30 @@ public class TenantService : ITenantService
         // This will use EF Core migrations to create the tenant database schema
         // Implementation will be added when tenant migration logic is implemented
         await Task.CompletedTask;
+    }
+
+    private async Task AssignDefaultPlanAsync(Guid tenantId)
+    {
+        var basicPlan = await _directoryDb.Plans.FirstOrDefaultAsync(p => p.Name == "Basic");
+        if (basicPlan == null)
+        {
+            throw new InvalidOperationException("Basic plan not found. Ensure feature gating data is seeded.");
+        }
+
+        var existingSubscription = await _directoryDb.TenantSubscriptions
+            .FirstOrDefaultAsync(ts => ts.TenantId == tenantId && ts.IsActive);
+
+        if (existingSubscription == null)
+        {
+            _directoryDb.TenantSubscriptions.Add(new TenantSubscription
+            {
+                TenantId = tenantId,
+                PlanId = basicPlan.PlanId,
+                StartDate = DateTime.UtcNow,
+                IsActive = true
+            });
+
+            await _directoryDb.SaveChangesAsync();
+        }
     }
 }

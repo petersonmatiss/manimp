@@ -1,0 +1,332 @@
+@page "/features"
+@using Manimp.Shared.Interfaces
+@using Manimp.Shared.Models
+@inject IFeatureGate FeatureGate
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Feature Access Demo</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudPaper Class="pa-8" Elevation="4">
+        <MudText Typo="Typo.h4" Class="mb-6">Feature Access Demonstration</MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            This page demonstrates the feature gating system based on tenant subscription plans.
+            Features are shown/hidden based on the tenant's current subscription level.
+        </MudText>
+
+        @if (IsLoading)
+        {
+            <MudProgressCircular Indeterminate="true" />
+            <MudText>Loading tenant features...</MudText>
+        }
+        else if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <MudAlert Severity="Severity.Error">
+                @ErrorMessage
+            </MudAlert>
+        }
+        else
+        {
+            <MudGrid>
+                <!-- Tier 1 Features (Basic Plan) -->
+                <MudItem xs="12">
+                    <MudCard Class="mb-4">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Tier 1 - Core Inventory (Basic Plan)</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <div class="ma-2">
+                                @foreach (var feature in Tier1Features)
+                                {
+                                    <div class="d-flex align-center justify-space-between pa-2 mb-2" style="border: 1px solid #e0e0e0; border-radius: 4px;">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@GetFeatureIcon(feature.Key)" Class="mr-3" />
+                                            <div>
+                                                <MudText Typo="Typo.body1">@GetFeatureName(feature.Key)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">@GetFeatureDescription(feature.Key)</MudText>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@(feature.Value ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
+                                                     Color="@(feature.Value ? Color.Success : Color.Error)" 
+                                                     Class="mr-2" />
+                                            <MudText Typo="Typo.caption" Color="@(feature.Value ? Color.Success : Color.Error)">
+                                                @(feature.Value ? "Enabled" : "Disabled")
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Tier 2 Features (Professional Plan) -->
+                <MudItem xs="12">
+                    <MudCard Class="mb-4">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Tier 2 - Procurement & Remnants (Professional Plan)</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <div class="ma-2">
+                                @foreach (var feature in Tier2Features)
+                                {
+                                    <div class="d-flex align-center justify-space-between pa-2 mb-2" style="border: 1px solid #e0e0e0; border-radius: 4px;">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@GetFeatureIcon(feature.Key)" Class="mr-3" />
+                                            <div>
+                                                <MudText Typo="Typo.body1">@GetFeatureName(feature.Key)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">@GetFeatureDescription(feature.Key)</MudText>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@(feature.Value ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
+                                                     Color="@(feature.Value ? Color.Success : Color.Error)" 
+                                                     Class="mr-2" />
+                                            <MudText Typo="Typo.caption" Color="@(feature.Value ? Color.Success : Color.Error)">
+                                                @(feature.Value ? "Enabled" : "Disabled")
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+
+                <!-- Tier 3 Features (Enterprise Plan) -->
+                <MudItem xs="12">
+                    <MudCard Class="mb-4">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.h6">Tier 3 - Sourcing & Advanced (Enterprise Plan)</MudText>
+                            </CardHeaderContent>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <div class="ma-2">
+                                @foreach (var feature in Tier3Features)
+                                {
+                                    <div class="d-flex align-center justify-space-between pa-2 mb-2" style="border: 1px solid #e0e0e0; border-radius: 4px;">
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@GetFeatureIcon(feature.Key)" Class="mr-3" />
+                                            <div>
+                                                <MudText Typo="Typo.body1">@GetFeatureName(feature.Key)</MudText>
+                                                <MudText Typo="Typo.caption" Color="Color.Secondary">@GetFeatureDescription(feature.Key)</MudText>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-center">
+                                            <MudIcon Icon="@(feature.Value ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
+                                                     Color="@(feature.Value ? Color.Success : Color.Error)" 
+                                                     Class="mr-2" />
+                                            <MudText Typo="Typo.caption" Color="@(feature.Value ? Color.Success : Color.Error)">
+                                                @(feature.Value ? "Enabled" : "Disabled")
+                                            </MudText>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-6" />
+
+            <!-- Demo Actions -->
+            <MudText Typo="Typo.h6" Class="mb-4">Demo Actions</MudText>
+            <div class="d-flex gap-2">
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           OnClick="RefreshFeatures"
+                           StartIcon="Icons.Material.Filled.Refresh">
+                    Refresh Features
+                </MudButton>
+                
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Secondary" 
+                           OnClick="ShowFeatureDetails"
+                           StartIcon="Icons.Material.Filled.Info">
+                    View Details
+                </MudButton>
+            </div>
+
+            @if (FeatureStatuses?.Any() == true)
+            {
+                <MudCollapse Expanded="true" Class="mt-4">
+                    <MudPaper Class="pa-4" Elevation="2">
+                        <MudText Typo="Typo.h6" Class="mb-3">Feature Status Details</MudText>
+                        <div>
+                            @foreach (var status in FeatureStatuses)
+                            {
+                                <MudCard Class="mb-2" Elevation="2">
+                                    <MudCardContent>
+                                        <MudText Typo="Typo.subtitle1">@status.Key</MudText>
+                                        <MudText Typo="Typo.body2">Enabled: @status.Value.IsEnabled</MudText>
+                                        <MudText Typo="Typo.body2">Source: @status.Value.Source</MudText>
+                                        @if (status.Value.Metadata?.Any() == true)
+                                        {
+                                            <MudText Typo="Typo.caption">
+                                                Metadata: @string.Join(", ", status.Value.Metadata.Select(m => $"{m.Key}: {m.Value}"))
+                                            </MudText>
+                                        }
+                                    </MudCardContent>
+                                </MudCard>
+                            }
+                        </div>
+                    </MudPaper>
+                </MudCollapse>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+    private Dictionary<string, bool> TenantFeatures = new();
+    private Dictionary<string, FeatureStatus>? FeatureStatuses;
+
+    private Dictionary<string, bool> Tier1Features = new();
+    private Dictionary<string, bool> Tier2Features = new();
+    private Dictionary<string, bool> Tier3Features = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTenantFeatures();
+    }
+
+    private async Task LoadTenantFeatures()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+
+            // For demo purposes, we'll use a mock tenant ID
+            // In a real app, this would come from the authenticated user context
+            var mockTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+
+            TenantFeatures = await FeatureGate.GetTenantFeaturesAsync(mockTenantId);
+            FeatureStatuses = await FeatureGate.GetTenantFeatureStatusesAsync(mockTenantId);
+
+            // Organize features by tier
+            OrganizeFeaturesByTier();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading tenant features: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OrganizeFeaturesByTier()
+    {
+        var tier1Keys = new[] { 
+            FeatureKeys.CoreInventory, 
+            FeatureKeys.ProfileManagement, 
+            FeatureKeys.UsageTracking, 
+            FeatureKeys.MaterialLookups 
+        };
+
+        var tier2Keys = new[] { 
+            FeatureKeys.ProcurementManagement, 
+            FeatureKeys.PurchaseOrders, 
+            FeatureKeys.RemnantTracking, 
+            FeatureKeys.ProcurementReports 
+        };
+
+        var tier3Keys = new[] { 
+            FeatureKeys.SourcingManagement, 
+            FeatureKeys.PriceRequests, 
+            FeatureKeys.QuoteManagement, 
+            FeatureKeys.VendorComparison, 
+            FeatureKeys.SourcingReports 
+        };
+
+        Tier1Features = tier1Keys.ToDictionary(k => k, k => TenantFeatures.GetValueOrDefault(k, false));
+        Tier2Features = tier2Keys.ToDictionary(k => k, k => TenantFeatures.GetValueOrDefault(k, false));
+        Tier3Features = tier3Keys.ToDictionary(k => k, k => TenantFeatures.GetValueOrDefault(k, false));
+    }
+
+    private async Task RefreshFeatures()
+    {
+        await LoadTenantFeatures();
+    }
+
+    private async Task ShowFeatureDetails()
+    {
+        // This could open a dialog or navigate to a details page
+        await JSRuntime.InvokeVoidAsync("alert", "Feature details would be shown here in a production app");
+    }
+
+    private string GetFeatureIcon(string featureKey)
+    {
+        return featureKey switch
+        {
+            FeatureKeys.CoreInventory => Icons.Material.Filled.Inventory,
+            FeatureKeys.ProfileManagement => Icons.Material.Filled.Category,
+            FeatureKeys.UsageTracking => Icons.Material.Filled.Timeline,
+            FeatureKeys.MaterialLookups => Icons.Material.Filled.Search,
+            FeatureKeys.ProcurementManagement => Icons.Material.Filled.ShoppingCart,
+            FeatureKeys.PurchaseOrders => Icons.Material.Filled.Receipt,
+            FeatureKeys.RemnantTracking => Icons.Material.Filled.Recycling,
+            FeatureKeys.ProcurementReports => Icons.Material.Filled.Assessment,
+            FeatureKeys.SourcingManagement => Icons.Material.Filled.Group,
+            FeatureKeys.PriceRequests => Icons.Material.Filled.RequestQuote,
+            FeatureKeys.QuoteManagement => Icons.Material.Filled.CompareArrows,
+            FeatureKeys.VendorComparison => Icons.Material.Filled.Compare,
+            FeatureKeys.SourcingReports => Icons.Material.Filled.Analytics,
+            _ => Icons.Material.Filled.Extension
+        };
+    }
+
+    private string GetFeatureName(string featureKey)
+    {
+        return featureKey switch
+        {
+            FeatureKeys.CoreInventory => "Core Inventory",
+            FeatureKeys.ProfileManagement => "Profile Management",
+            FeatureKeys.UsageTracking => "Usage Tracking",
+            FeatureKeys.MaterialLookups => "Material Lookups",
+            FeatureKeys.ProcurementManagement => "Procurement Management",
+            FeatureKeys.PurchaseOrders => "Purchase Orders",
+            FeatureKeys.RemnantTracking => "Remnant Tracking",
+            FeatureKeys.ProcurementReports => "Procurement Reports",
+            FeatureKeys.SourcingManagement => "Sourcing Management",
+            FeatureKeys.PriceRequests => "Price Requests",
+            FeatureKeys.QuoteManagement => "Quote Management",
+            FeatureKeys.VendorComparison => "Vendor Comparison",
+            FeatureKeys.SourcingReports => "Sourcing Reports",
+            _ => featureKey.Replace("_", " ")
+        };
+    }
+
+    private string GetFeatureDescription(string featureKey)
+    {
+        return featureKey switch
+        {
+            FeatureKeys.CoreInventory => "Basic inventory tracking and management",
+            FeatureKeys.ProfileManagement => "Manage material profiles and specifications",
+            FeatureKeys.UsageTracking => "Track material usage and consumption",
+            FeatureKeys.MaterialLookups => "Access to material type, profile, and grade lookups",
+            FeatureKeys.ProcurementManagement => "Advanced procurement tracking and management",
+            FeatureKeys.PurchaseOrders => "Create and manage purchase orders",
+            FeatureKeys.RemnantTracking => "Automated tracking of material remnants",
+            FeatureKeys.ProcurementReports => "Advanced reporting for procurement activities",
+            FeatureKeys.SourcingManagement => "Strategic sourcing and vendor management",
+            FeatureKeys.PriceRequests => "Request for quote (RFQ) management",
+            FeatureKeys.QuoteManagement => "Manage vendor quotes and comparisons",
+            FeatureKeys.VendorComparison => "Compare vendors and pricing across quotes",
+            FeatureKeys.SourcingReports => "Advanced reporting for sourcing activities",
+            _ => "Feature description not available"
+        };
+    }
+}
