@@ -148,14 +148,128 @@ public class FeatureGateDataSeeder
                 Category = "Sourcing"
             },
 
-            // Future module placeholders
+            // CRM Module Features (Available from Tier 2)
             new Feature
             {
-                FeatureKey = FeatureKeys.ProjectManagement,
-                Name = "Project Management",
-                Description = "Enhanced project management and tracking",
-                Category = "Projects"
+                FeatureKey = FeatureKeys.CrmModule,
+                Name = "CRM Module",
+                Description = "Customer relationship management and project tracking",
+                Category = "CRM"
             },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.CustomerManagement,
+                Name = "Customer Management",
+                Description = "Manage customers and their information",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.ContactManagement,
+                Name = "Contact Management",
+                Description = "Manage customer contacts and relationships",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.CrmProjectManagement,
+                Name = "CRM Project Management",
+                Description = "Enhanced project management with delivery tracking",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.AssemblyManagement,
+                Name = "Assembly Management",
+                Description = "Manage assembly lists and manufacturing progress",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.PartManagement,
+                Name = "Part Management",
+                Description = "Manage parts, components and bills of materials",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.BoltManagement,
+                Name = "Bolt Management",
+                Description = "Manage bolts and fasteners",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.CoatingManagement,
+                Name = "Coating Management",
+                Description = "Manage coatings and surface treatments",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.OutsourcingManagement,
+                Name = "Outsourcing Management",
+                Description = "Manage outsourced work and subcontractors",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.CuttingListOptimization,
+                Name = "Cutting List Optimization",
+                Description = "Generate optimized cutting lists with traceability",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.DeliveryManagement,
+                Name = "Delivery Management",
+                Description = "Manage deliveries and logistics",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.PackingListGeneration,
+                Name = "Packing List Generation",
+                Description = "Generate packing lists for delivery and outsourcing",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.AssemblyListUpload,
+                Name = "Assembly List Upload (Basic)",
+                Description = "Upload assembly lists manually for Tier 1",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.AssemblyListUploadTier2,
+                Name = "Assembly List Upload (Tier 2)",
+                Description = "Upload Excel files with manual column mapping",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.AssemblyListUploadTier3,
+                Name = "Assembly List Upload (AI-Powered)",
+                Description = "AI-powered Excel parsing with automatic column detection",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.ManufacturingProgress,
+                Name = "Manufacturing Progress Tracking",
+                Description = "Track manufacturing progress and completion",
+                Category = "CRM"
+            },
+            new Feature
+            {
+                FeatureKey = FeatureKeys.ProgressReporting,
+                Name = "Progress Reporting",
+                Description = "Generate progress reports and analytics",
+                Category = "CRM"
+            },
+
+            // Future module placeholders
             new Feature
             {
                 FeatureKey = FeatureKeys.QualityControl,
@@ -246,7 +360,17 @@ public class FeatureGateDataSeeder
                 FeatureKeys.CoreInventory,
                 FeatureKeys.ProfileManagement,
                 FeatureKeys.UsageTracking,
-                FeatureKeys.MaterialLookups
+                FeatureKeys.MaterialLookups,
+                // Basic CRM Features (Tier 1)
+                FeatureKeys.CrmModule,
+                FeatureKeys.CustomerManagement,
+                FeatureKeys.ContactManagement,
+                FeatureKeys.CrmProjectManagement,
+                FeatureKeys.AssemblyManagement,
+                FeatureKeys.PartManagement,
+                FeatureKeys.BoltManagement,
+                FeatureKeys.ManufacturingProgress,
+                FeatureKeys.AssemblyListUpload // Manual input only
             },
             [professionalPlan] = new[]
             {
@@ -255,11 +379,28 @@ public class FeatureGateDataSeeder
                 FeatureKeys.ProfileManagement,
                 FeatureKeys.UsageTracking,
                 FeatureKeys.MaterialLookups,
+                FeatureKeys.CrmModule,
+                FeatureKeys.CustomerManagement,
+                FeatureKeys.ContactManagement,
+                FeatureKeys.CrmProjectManagement,
+                FeatureKeys.AssemblyManagement,
+                FeatureKeys.PartManagement,
+                FeatureKeys.BoltManagement,
+                FeatureKeys.ManufacturingProgress,
+                FeatureKeys.AssemblyListUpload,
                 // Plus Professional features
                 FeatureKeys.ProcurementManagement,
                 FeatureKeys.PurchaseOrders,
                 FeatureKeys.RemnantTracking,
-                FeatureKeys.ProcurementReports
+                FeatureKeys.ProcurementReports,
+                // Enhanced CRM Features (Tier 2)
+                FeatureKeys.CoatingManagement,
+                FeatureKeys.OutsourcingManagement,
+                FeatureKeys.CuttingListOptimization,
+                FeatureKeys.DeliveryManagement,
+                FeatureKeys.PackingListGeneration,
+                FeatureKeys.ProgressReporting,
+                FeatureKeys.AssemblyListUploadTier2 // Excel upload with manual mapping
             },
             [enterprisePlan] = new[]
             {
@@ -268,18 +409,35 @@ public class FeatureGateDataSeeder
                 FeatureKeys.ProfileManagement,
                 FeatureKeys.UsageTracking,
                 FeatureKeys.MaterialLookups,
+                FeatureKeys.CrmModule,
+                FeatureKeys.CustomerManagement,
+                FeatureKeys.ContactManagement,
+                FeatureKeys.CrmProjectManagement,
+                FeatureKeys.AssemblyManagement,
+                FeatureKeys.PartManagement,
+                FeatureKeys.BoltManagement,
+                FeatureKeys.ManufacturingProgress,
+                FeatureKeys.AssemblyListUpload,
                 FeatureKeys.ProcurementManagement,
                 FeatureKeys.PurchaseOrders,
                 FeatureKeys.RemnantTracking,
                 FeatureKeys.ProcurementReports,
+                FeatureKeys.CoatingManagement,
+                FeatureKeys.OutsourcingManagement,
+                FeatureKeys.CuttingListOptimization,
+                FeatureKeys.DeliveryManagement,
+                FeatureKeys.PackingListGeneration,
+                FeatureKeys.ProgressReporting,
+                FeatureKeys.AssemblyListUploadTier2,
                 // Plus Enterprise features
                 FeatureKeys.SourcingManagement,
                 FeatureKeys.PriceRequests,
                 FeatureKeys.QuoteManagement,
                 FeatureKeys.VendorComparison,
                 FeatureKeys.SourcingReports,
+                // Advanced CRM Features (Tier 3)
+                FeatureKeys.AssemblyListUploadTier3, // AI-powered parsing
                 // Future features available in Enterprise
-                FeatureKeys.ProjectManagement,
                 FeatureKeys.QualityControl,
                 FeatureKeys.ProductionTracking
             }
