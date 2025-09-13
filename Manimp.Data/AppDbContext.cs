@@ -274,7 +274,14 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(e => e.ProjectId);
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.ExecutionClass).HasMaxLength(10);
+            entity.Property(e => e.CreatedMonth).HasMaxLength(7);
             entity.Property(e => e.RowVersion).IsRowVersion();
+
+            // Index for EN 1090 execution class lookups
+            entity.HasIndex(e => e.ExecutionClass);
+            entity.HasIndex(e => e.ProjectTier);
+            entity.HasIndex(e => e.CreatedMonth);
         });
 
         // Configure Document
@@ -310,6 +317,16 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
             // Tier 2 Procurement and Project tracking properties
             entity.Property(e => e.PONumber).HasMaxLength(50);
+
+            // EN 1090 Traceability properties
+            entity.Property(e => e.MaterialBatch).HasMaxLength(100);
+            entity.Property(e => e.MillTestCertificateNumber).HasMaxLength(100);
+            entity.Property(e => e.CertificateType).HasMaxLength(10);
+            entity.Property(e => e.MaterialStandard).HasMaxLength(50);
+            entity.Property(e => e.ManufacturingRoute).HasMaxLength(50);
+            entity.Property(e => e.SurfaceCondition).HasMaxLength(50);
+            entity.Property(e => e.CountryOfOrigin).HasMaxLength(100);
+            entity.Property(e => e.TraceabilityNotes).HasMaxLength(2000);
 
             ConfigureProfileInventoryRelationships(entity);
             ConfigureProfileInventoryIndexes(entity);
@@ -388,6 +405,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
         entity.HasIndex(e => new { e.SupplierId, e.ReceivedDate });
         entity.HasIndex(e => new { e.PurchaseOrderId, e.ReceivedDate });
         entity.HasIndex(e => new { e.ProjectId, e.ReceivedDate });
+
+        // EN 1090 Traceability indexes
+        entity.HasIndex(e => e.MaterialBatch);
+        entity.HasIndex(e => e.MillTestCertificateNumber);
+        entity.HasIndex(e => e.CertificateType);
     }
 
     /// <summary>
