@@ -101,10 +101,7 @@ public class Project
     [MaxLength(10)]
     public string? ExecutionClass { get; set; }
 
-    /// <summary>
-    /// Gets or sets the project tier based on execution class (1=EXC1-2, 2=EXC3, 3=EXC4)
-    /// </summary>
-    public int? ProjectTier { get; set; }
+
 
     /// <summary>
     /// Gets or sets the month when this project was created (YYYY-MM format)

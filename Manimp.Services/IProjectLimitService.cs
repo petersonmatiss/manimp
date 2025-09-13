@@ -61,7 +61,7 @@ public interface IProjectLimitService
 }
 
 /// <summary>
-/// Interface for EN 1090 compliance validation and project tier management
+/// Interface for EN 1090 compliance validation and subscription tier management
 /// </summary>
 public interface IEN1090ComplianceService
 {
@@ -73,11 +73,26 @@ public interface IEN1090ComplianceService
     bool IsValidExecutionClass(string? executionClass);
 
     /// <summary>
-    /// Gets the project tier for an execution class
+    /// Gets the minimum subscription tier required for an execution class
     /// </summary>
     /// <param name="executionClass">The execution class</param>
-    /// <returns>The project tier (1, 2, or 3) or null if invalid</returns>
-    int? GetProjectTier(string? executionClass);
+    /// <returns>The minimum subscription tier required</returns>
+    int GetRequiredSubscriptionTier(string? executionClass);
+
+    /// <summary>
+    /// Checks if a tenant's subscription tier allows a specific execution class
+    /// </summary>
+    /// <param name="tenantId">The tenant identifier</param>
+    /// <param name="executionClass">The execution class to check</param>
+    /// <returns>True if allowed, false otherwise</returns>
+    Task<bool> IsExecutionClassAllowedAsync(Guid tenantId, string? executionClass);
+
+    /// <summary>
+    /// Gets the tenant's current subscription tier for EN 1090 features
+    /// </summary>
+    /// <param name="tenantId">The tenant identifier</param>
+    /// <returns>The subscription tier (1=Basic, 2=Professional, 3=Enterprise)</returns>
+    Task<int> GetTenantSubscriptionTierAsync(Guid tenantId);
 
     /// <summary>
     /// Validates EN 10204 certificate type
@@ -87,22 +102,22 @@ public interface IEN1090ComplianceService
     bool IsValidCertificateType(string? certificateType);
 
     /// <summary>
-    /// Gets EN 1090 compliance requirements for a project tier
+    /// Gets EN 1090 compliance requirements for a subscription tier
     /// </summary>
-    /// <param name="tier">The project tier</param>
+    /// <param name="subscriptionTier">The subscription tier</param>
     /// <returns>Dictionary of compliance requirements</returns>
-    Dictionary<string, object> GetComplianceRequirements(int tier);
+    Dictionary<string, object> GetComplianceRequirements(int subscriptionTier);
 
     /// <summary>
-    /// Validates that material data meets EN 1090 requirements for a given tier
+    /// Validates that material data meets EN 1090 requirements for a given subscription tier
     /// </summary>
-    /// <param name="tier">The project tier</param>
+    /// <param name="subscriptionTier">The subscription tier</param>
     /// <param name="materialBatch">Material batch number</param>
     /// <param name="certificateType">Certificate type</param>
     /// <param name="countryOfOrigin">Country of origin</param>
     /// <returns>Validation result with any issues</returns>
     (bool IsValid, List<string> Issues) ValidateMaterialCompliance(
-        int tier, 
+        int subscriptionTier, 
         string? materialBatch, 
         string? certificateType, 
         string? countryOfOrigin);

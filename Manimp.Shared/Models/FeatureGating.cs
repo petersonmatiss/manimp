@@ -399,43 +399,59 @@ public static class EN1090Constants
     }
 
     /// <summary>
-    /// Project tiers based on execution class
+    /// Subscription tiers that determine EN 1090 feature access
     /// </summary>
-    public static class ProjectTiers
+    public static class SubscriptionTiers
     {
-        public const int Tier1 = 1; // EXC1, EXC2
-        public const int Tier2 = 2; // EXC3
-        public const int Tier3 = 3; // EXC4
+        public const int Basic = 1;        // Basic features - EXC1 only
+        public const int Professional = 2; // Enhanced features - EXC1-EXC3
+        public const int Enterprise = 3;   // Full features - EXC1-EXC4
 
         /// <summary>
-        /// Maps execution class to project tier
+        /// Gets execution classes allowed for a subscription tier
         /// </summary>
-        /// <param name="executionClass">The execution class</param>
-        /// <returns>The corresponding project tier</returns>
-        public static int? GetTierFromExecutionClass(string? executionClass)
+        /// <param name="subscriptionTier">The subscription tier</param>
+        /// <returns>Array of execution classes allowed for the tier</returns>
+        public static string[] GetAllowedExecutionClasses(int subscriptionTier)
         {
-            return executionClass switch
+            return subscriptionTier switch
             {
-                ExecutionClasses.EXC1 or ExecutionClasses.EXC2 => Tier1,
-                ExecutionClasses.EXC3 => Tier2,
-                ExecutionClasses.EXC4 => Tier3,
-                _ => null
+                Basic => new[] { ExecutionClasses.EXC1 },
+                Professional => new[] { ExecutionClasses.EXC1, ExecutionClasses.EXC2, ExecutionClasses.EXC3 },
+                Enterprise => ExecutionClasses.All,
+                _ => Array.Empty<string>()
             };
         }
 
         /// <summary>
-        /// Gets execution classes for a given tier
+        /// Gets the minimum subscription tier required for an execution class
         /// </summary>
-        /// <param name="tier">The project tier</param>
-        /// <returns>Array of execution classes for the tier</returns>
-        public static string[] GetExecutionClassesForTier(int tier)
+        /// <param name="executionClass">The execution class</param>
+        /// <returns>The minimum subscription tier required</returns>
+        public static int GetRequiredSubscriptionTier(string? executionClass)
+        {
+            return executionClass switch
+            {
+                ExecutionClasses.EXC1 => Basic,
+                ExecutionClasses.EXC2 or ExecutionClasses.EXC3 => Professional,
+                ExecutionClasses.EXC4 => Enterprise,
+                _ => Enterprise // Default to highest tier for unknown classes
+            };
+        }
+
+        /// <summary>
+        /// Gets the tier name for display purposes
+        /// </summary>
+        /// <param name="tier">The subscription tier</param>
+        /// <returns>The tier name</returns>
+        public static string GetTierName(int tier)
         {
             return tier switch
             {
-                Tier1 => new[] { ExecutionClasses.EXC1, ExecutionClasses.EXC2 },
-                Tier2 => new[] { ExecutionClasses.EXC3 },
-                Tier3 => new[] { ExecutionClasses.EXC4 },
-                _ => Array.Empty<string>()
+                Basic => "Basic",
+                Professional => "Professional", 
+                Enterprise => "Enterprise",
+                _ => "Unknown"
             };
         }
     }

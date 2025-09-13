@@ -569,12 +569,9 @@
             return EN1090Constants.ExecutionClasses.All.Contains(executionClass.ToUpperInvariant());
         }
 
-        public int? GetProjectTier(string? executionClass)
+        public int GetRequiredSubscriptionTier(string? executionClass)
         {
-            if (string.IsNullOrWhiteSpace(executionClass))
-                return null;
-
-            return EN1090Constants.ProjectTiers.GetTierFromExecutionClass(executionClass.ToUpperInvariant());
+            return EN1090Constants.SubscriptionTiers.GetRequiredSubscriptionTier(executionClass);
         }
 
         public bool IsValidCertificateType(string? certificateType)
@@ -585,31 +582,32 @@
             return EN1090Constants.CertificateTypes.All.Contains(certificateType);
         }
 
-        public Dictionary<string, object> GetComplianceRequirements(int tier)
+        public Dictionary<string, object> GetComplianceRequirements(int subscriptionTier)
         {
             var requirements = new Dictionary<string, object>
             {
-                ["Tier"] = tier,
-                ["ExecutionClasses"] = EN1090Constants.ProjectTiers.GetExecutionClassesForTier(tier)
+                ["SubscriptionTier"] = subscriptionTier,
+                ["TierName"] = EN1090Constants.SubscriptionTiers.GetTierName(subscriptionTier),
+                ["AllowedExecutionClasses"] = EN1090Constants.SubscriptionTiers.GetAllowedExecutionClasses(subscriptionTier)
             };
 
-            switch (tier)
+            switch (subscriptionTier)
             {
-                case EN1090Constants.ProjectTiers.Tier1:
-                    requirements["MaterialTraceability"] = "Basic";
-                    requirements["WeldingProcedures"] = "Standard";
+                case EN1090Constants.SubscriptionTiers.Basic:
+                    requirements["MaterialTraceability"] = "Basic documentation";
+                    requirements["WeldingProcedures"] = "Standard procedures";
                     requirements["TestCertificates"] = "EN 10204 2.1 minimum";
-                    requirements["Documentation"] = "Standard documentation required";
+                    requirements["Documentation"] = "Standard project documentation";
                     break;
 
-                case EN1090Constants.ProjectTiers.Tier2:
+                case EN1090Constants.SubscriptionTiers.Professional:
                     requirements["MaterialTraceability"] = "Enhanced with batch tracking";
                     requirements["WeldingProcedures"] = "Qualified procedures required";
                     requirements["TestCertificates"] = "EN 10204 3.1 minimum";
                     requirements["Documentation"] = "Enhanced documentation and inspection records";
                     break;
 
-                case EN1090Constants.ProjectTiers.Tier3:
+                case EN1090Constants.SubscriptionTiers.Enterprise:
                     requirements["MaterialTraceability"] = "Full traceability with country of origin";
                     requirements["WeldingProcedures"] = "Fully qualified procedures with PQR";
                     requirements["TestCertificates"] = "EN 10204 3.2 required";
@@ -622,7 +620,7 @@
         }
 
         public (bool IsValid, List<string> Issues) ValidateMaterialCompliance(
-            int tier, 
+            int subscriptionTier, 
             string? materialBatch, 
             string? certificateType, 
             string? countryOfOrigin)
@@ -635,40 +633,44 @@
                 issues.Add($"Invalid certificate type: {certificateType}");
             }
 
-            // Tier-specific validations
-            switch (tier)
+            // Subscription tier-specific validations
+            switch (subscriptionTier)
             {
-                case EN1090Constants.ProjectTiers.Tier2:
+                case EN1090Constants.SubscriptionTiers.Basic:
+                    // Basic tier - minimal requirements
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Professional:
                     if (string.IsNullOrWhiteSpace(materialBatch))
                     {
-                        issues.Add("Material batch number is required for EXC3 projects");
+                        issues.Add("Material batch number is required for Professional tier projects");
                     }
                     if (string.IsNullOrWhiteSpace(certificateType))
                     {
-                        issues.Add("Certificate type is required for EXC3 projects (EN 10204 3.1 minimum)");
+                        issues.Add("Certificate type is required for Professional tier projects (EN 10204 3.1 minimum)");
                     }
                     else if (certificateType == EN1090Constants.CertificateTypes.Type21)
                     {
-                        issues.Add("Certificate type 3.1 or higher is required for EXC3 projects");
+                        issues.Add("Certificate type 3.1 or higher is required for Professional tier projects");
                     }
                     break;
 
-                case EN1090Constants.ProjectTiers.Tier3:
+                case EN1090Constants.SubscriptionTiers.Enterprise:
                     if (string.IsNullOrWhiteSpace(materialBatch))
                     {
-                        issues.Add("Material batch number is required for EXC4 projects");
+                        issues.Add("Material batch number is required for Enterprise tier projects");
                     }
                     if (string.IsNullOrWhiteSpace(certificateType))
                     {
-                        issues.Add("Certificate type is required for EXC4 projects (EN 10204 3.2 required)");
+                        issues.Add("Certificate type is required for Enterprise tier projects (EN 10204 3.2 required)");
                     }
                     else if (certificateType != EN1090Constants.CertificateTypes.Type32)
                     {
-                        issues.Add("Certificate type 3.2 is required for EXC4 projects");
+                        issues.Add("Certificate type 3.2 is required for Enterprise tier projects");
                     }
                     if (string.IsNullOrWhiteSpace(countryOfOrigin))
                     {
-                        issues.Add("Country of origin is required for EXC4 projects");
+                        issues.Add("Country of origin is required for Enterprise tier projects");
                     }
                     break;
             }

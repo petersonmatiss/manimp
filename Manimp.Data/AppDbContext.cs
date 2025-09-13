@@ -280,7 +280,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
             // Index for EN 1090 execution class lookups
             entity.HasIndex(e => e.ExecutionClass);
-            entity.HasIndex(e => e.ProjectTier);
             entity.HasIndex(e => e.CreatedMonth);
         });
 

@@ -129,10 +129,10 @@
                                 <MudItem xs="12">
                                     <MudCard Elevation="1" Class="pa-4">
                                         <MudText Typo="Typo.h6" Class="mb-2">
-                                            Project Tier: @GetProjectTier(ExecutionClass)
+                                            Required Subscription Tier: @GetRequiredSubscriptionTier(ExecutionClass)
                                         </MudText>
                                         <MudText Typo="Typo.body2" Class="mb-3">
-                                            @GetTierDescription(GetProjectTier(ExecutionClass))
+                                            @GetSubscriptionTierDescription(GetRequiredSubscriptionTier(ExecutionClass))
                                         </MudText>
                                         
                                         @if (ComplianceRequirements.Any())
@@ -187,14 +187,6 @@
                                 <MudChip Color="@GetExecutionClassColor(context.Item.ExecutionClass)" 
                                          Size="Size.Small">
                                     @context.Item.ExecutionClass
-                                </MudChip>
-                            </CellTemplate>
-                        </PropertyColumn>
-                        <PropertyColumn Property="x => x.ProjectTier" Title="Tier">
-                            <CellTemplate>
-                                <MudChip Color="@GetTierColor(context.Item.ProjectTier)" 
-                                         Size="Size.Small">
-                                    Tier @context.Item.ProjectTier
                                 </MudChip>
                             </CellTemplate>
                         </PropertyColumn>
@@ -319,7 +311,6 @@
                 ProjectId = 1, 
                 Name = "Office Building Frame", 
                 ExecutionClass = "EXC2", 
-                ProjectTier = 1, 
                 StartDate = DateTime.Now.AddDays(-30),
                 EndDate = DateTime.Now.AddDays(60),
                 IsActive = true,
@@ -329,7 +320,6 @@
                 ProjectId = 2, 
                 Name = "Bridge Span Assembly", 
                 ExecutionClass = "EXC3", 
-                ProjectTier = 2, 
                 StartDate = DateTime.Now.AddDays(-15),
                 EndDate = DateTime.Now.AddDays(90),
                 IsActive = true,
@@ -339,7 +329,6 @@
                 ProjectId = 3, 
                 Name = "Petrochemical Plant Structure", 
                 ExecutionClass = "EXC4", 
-                ProjectTier = 3, 
                 StartDate = DateTime.Now.AddDays(-45),
                 EndDate = DateTime.Now.AddDays(120),
                 IsActive = true,
@@ -353,15 +342,11 @@
         NewProject.ExecutionClass = value;
         if (!string.IsNullOrWhiteSpace(NewProject.ExecutionClass))
         {
-            NewProject.ProjectTier = MockComplianceService.GetProjectTier(NewProject.ExecutionClass);
-            if (NewProject.ProjectTier.HasValue)
-            {
-                ComplianceRequirements = MockComplianceService.GetComplianceRequirements(NewProject.ProjectTier.Value);
-            }
+            var requiredTier = MockComplianceService.GetRequiredSubscriptionTier(NewProject.ExecutionClass);
+            ComplianceRequirements = MockComplianceService.GetComplianceRequirements(requiredTier);
         }
         else
         {
-            NewProject.ProjectTier = null;
             ComplianceRequirements.Clear();
         }
         StateHasChanged();
@@ -377,8 +362,7 @@
                 return;
             }
 
-            // Set tier based on execution class
-            NewProject.ProjectTier = MockComplianceService.GetProjectTier(NewProject.ExecutionClass);
+            // Set dates and metadata
             NewProject.StartDate = StartDate;
             NewProject.EndDate = EndDate;
             NewProject.CreatedMonth = DateTime.UtcNow.ToString("yyyy-MM");
@@ -396,7 +380,6 @@
                 Name = NewProject.Name,
                 Description = NewProject.Description,
                 ExecutionClass = NewProject.ExecutionClass,
-                ProjectTier = NewProject.ProjectTier,
                 StartDate = NewProject.StartDate,
                 EndDate = NewProject.EndDate,
                 CreatedMonth = NewProject.CreatedMonth,
@@ -440,19 +423,19 @@
         await JSRuntime.InvokeVoidAsync("alert", $"View project '{project.Name}' details - Implementation pending");
     }
 
-    private int GetProjectTier(string? executionClass)
+    private int GetRequiredSubscriptionTier(string? executionClass)
     {
-        return MockComplianceService.GetProjectTier(executionClass) ?? 1;
+        return MockComplianceService.GetRequiredSubscriptionTier(executionClass);
     }
 
-    private string GetTierDescription(int tier)
+    private string GetSubscriptionTierDescription(int tier)
     {
         return tier switch
         {
-            1 => "Basic structural steelwork (EXC1, EXC2) - Standard documentation requirements",
-            2 => "Enhanced quality requirements (EXC3) - Additional inspection and documentation",
-            3 => "Highest quality standards (EXC4) - Complete traceability and independent inspection",
-            _ => "Unknown tier"
+            1 => "Basic - EXC1 only, standard documentation requirements",
+            2 => "Professional - EXC1-EXC3, enhanced quality requirements and documentation",
+            3 => "Enterprise - All execution classes (EXC1-EXC4), complete traceability and independent inspection",
+            _ => "Unknown subscription tier"
         };
     }
 
@@ -468,20 +451,6 @@
         };
     }
 
-    private Color GetTierColor(int? tier)
-    {
-        return tier switch
-        {
-            1 => Color.Info,
-            2 => Color.Warning,
-            3 => Color.Error,
-            _ => Color.Default
-        };
-    }
-}
-
-@code
-{
     /// <summary>
     /// Mock implementation of EN1090ComplianceService for demo purposes
     /// </summary>
@@ -495,47 +464,52 @@
             return EN1090Constants.ExecutionClasses.All.Contains(executionClass.ToUpperInvariant());
         }
 
-        public int? GetProjectTier(string? executionClass)
+        public int GetRequiredSubscriptionTier(string? executionClass)
         {
-            if (string.IsNullOrWhiteSpace(executionClass))
-                return null;
-
-            return EN1090Constants.ProjectTiers.GetTierFromExecutionClass(executionClass.ToUpperInvariant());
+            return EN1090Constants.SubscriptionTiers.GetRequiredSubscriptionTier(executionClass);
         }
 
-        public Dictionary<string, object> GetComplianceRequirements(int tier)
+        public Dictionary<string, object> GetComplianceRequirements(int subscriptionTier)
         {
             var requirements = new Dictionary<string, object>
             {
-                ["Tier"] = tier,
-                ["ExecutionClasses"] = EN1090Constants.ProjectTiers.GetExecutionClassesForTier(tier)
+                ["SubscriptionTier"] = subscriptionTier,
+                ["TierName"] = EN1090Constants.SubscriptionTiers.GetTierName(subscriptionTier),
+                ["AllowedExecutionClasses"] = EN1090Constants.SubscriptionTiers.GetAllowedExecutionClasses(subscriptionTier)
             };
 
-            switch (tier)
+            switch (subscriptionTier)
             {
-                case EN1090Constants.ProjectTiers.Tier1:
-                    requirements["MaterialTraceability"] = "Basic";
-                    requirements["WeldingProcedures"] = "Standard";
+                case EN1090Constants.SubscriptionTiers.Basic:
+                    requirements["MaterialTraceability"] = "Basic documentation";
+                    requirements["WeldingProcedures"] = "Standard procedures";
                     requirements["TestCertificates"] = "EN 10204 2.1 minimum";
-                    requirements["Documentation"] = "Standard documentation required";
+                    requirements["Documentation"] = "Standard project documentation";
+                    requirements["ExecutionClasses"] = "EXC1 only";
+                    requirements["Features"] = new[] { "Basic inventory", "Simple project tracking" };
                     break;
 
-                case EN1090Constants.ProjectTiers.Tier2:
+                case EN1090Constants.SubscriptionTiers.Professional:
                     requirements["MaterialTraceability"] = "Enhanced with batch tracking";
                     requirements["WeldingProcedures"] = "Qualified procedures required";
                     requirements["TestCertificates"] = "EN 10204 3.1 minimum";
                     requirements["Documentation"] = "Enhanced documentation and inspection records";
+                    requirements["ExecutionClasses"] = "EXC1, EXC2, EXC3";
+                    requirements["Features"] = new[] { "Full inventory management", "Procurement features", "Advanced project tracking" };
                     break;
 
-                case EN1090Constants.ProjectTiers.Tier3:
+                case EN1090Constants.SubscriptionTiers.Enterprise:
                     requirements["MaterialTraceability"] = "Full traceability with country of origin";
                     requirements["WeldingProcedures"] = "Fully qualified procedures with PQR";
                     requirements["TestCertificates"] = "EN 10204 3.2 required";
                     requirements["Documentation"] = "Complete documentation package including NDT";
                     requirements["QualityControl"] = "Independent inspection required";
+                    requirements["ExecutionClasses"] = "EXC1, EXC2, EXC3, EXC4 (all classes)";
+                    requirements["Features"] = new[] { "Full CRM", "Sourcing management", "Complete compliance suite", "Advanced analytics" };
                     break;
             }
 
             return requirements;
         }
     }
+}
