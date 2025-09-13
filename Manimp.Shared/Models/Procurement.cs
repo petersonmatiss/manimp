@@ -162,6 +162,11 @@ public class PurchaseOrderLine
     /// </summary>
     public int SteelGradeId { get; set; }
 
+    /// <summary>
+    /// Gets or sets the optional price request line identifier for sourcing lineage
+    /// </summary>
+    public int? PriceRequestLineId { get; set; }
+
     // Navigation properties
     /// <summary>
     /// Gets or sets the purchase order
@@ -182,6 +187,11 @@ public class PurchaseOrderLine
     /// Gets or sets the steel grade
     /// </summary>
     public SteelGrade SteelGrade { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets the optional price request line for sourcing lineage
+    /// </summary>
+    public PriceRequestLine? PriceRequestLine { get; set; }
 }
 
 /// <summary>

@@ -75,6 +75,22 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     /// </summary>
     public DbSet<ProfileRemnantInventory> ProfileRemnantInventories { get; set; }
 
+    // Tier 3 Sourcing DbSets
+    /// <summary>
+    /// Gets or sets the price requests
+    /// </summary>
+    public DbSet<PriceRequest> PriceRequests { get; set; }
+
+    /// <summary>
+    /// Gets or sets the price request lines
+    /// </summary>
+    public DbSet<PriceRequestLine> PriceRequestLines { get; set; }
+
+    /// <summary>
+    /// Gets or sets the price quotes
+    /// </summary>
+    public DbSet<PriceQuote> PriceQuotes { get; set; }
+
     /// <summary>
     /// Configures the model that was discovered by convention from the entity types
     /// </summary>
@@ -93,6 +109,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         // Apply Tier 2 Procurement and Remnants Model Configuration
         ApplyInventoryProcurementAndRemnantsModel(modelBuilder);
+
+        // Apply Tier 3 Sourcing Model Configuration
+        ApplyInventorySourcingModel(modelBuilder);
     }
 
     /// <summary>
@@ -372,6 +391,11 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                   .HasForeignKey(e => e.SteelGradeId)
                   .OnDelete(DeleteBehavior.Restrict);
 
+            entity.HasOne(e => e.PriceRequestLine)
+                  .WithMany(prl => prl.PurchaseOrderLines)
+                  .HasForeignKey(e => e.PriceRequestLineId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
             // Indexes
             entity.HasIndex(e => new { e.PurchaseOrderId, e.LineNumber }).IsUnique();
         });
@@ -401,6 +425,101 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.RemnantLotNumber).IsUnique();
             entity.HasIndex(e => e.CreatedDate);
             entity.HasIndex(e => e.IsAvailable);
+        });
+    }
+
+    /// <summary>
+    /// Applies Tier 3 Sourcing model configuration
+    /// </summary>
+    /// <param name="modelBuilder">The model builder</param>
+    private static void ApplyInventorySourcingModel(ModelBuilder modelBuilder)
+    {
+        // Configure PriceRequest
+        modelBuilder.Entity<PriceRequest>(entity =>
+        {
+            entity.HasKey(e => e.PriceRequestId);
+            entity.Property(e => e.RequestNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            // Relationships
+            entity.HasOne(e => e.Supplier)
+                  .WithMany(s => s.PriceRequests)
+                  .HasForeignKey(e => e.SupplierId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Project)
+                  .WithMany(p => p.PriceRequests)
+                  .HasForeignKey(e => e.ProjectId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            // Indexes
+            entity.HasIndex(e => e.RequestNumber).IsUnique();
+            entity.HasIndex(e => e.RequestDate);
+            entity.HasIndex(e => e.Status);
+        });
+
+        // Configure PriceRequestLine
+        modelBuilder.Entity<PriceRequestLine>(entity =>
+        {
+            entity.HasKey(e => e.PriceRequestLineId);
+            entity.Property(e => e.Size).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Length).HasColumnType("decimal(10,3)");
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            // Relationships
+            entity.HasOne(e => e.PriceRequest)
+                  .WithMany(pr => pr.PriceRequestLines)
+                  .HasForeignKey(e => e.PriceRequestId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.MaterialType)
+                  .WithMany(mt => mt.PriceRequestLines)
+                  .HasForeignKey(e => e.MaterialTypeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.ProfileType)
+                  .WithMany(pt => pt.PriceRequestLines)
+                  .HasForeignKey(e => e.ProfileTypeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.SteelGrade)
+                  .WithMany(sg => sg.PriceRequestLines)
+                  .HasForeignKey(e => e.SteelGradeId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(e => new { e.PriceRequestId, e.LineNumber }).IsUnique();
+        });
+
+        // Configure PriceQuote
+        modelBuilder.Entity<PriceQuote>(entity =>
+        {
+            entity.HasKey(e => e.PriceQuoteId);
+            entity.Property(e => e.QuoteNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.TotalAmount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            // Relationships
+            entity.HasOne(e => e.PriceRequest)
+                  .WithMany(pr => pr.PriceQuotes)
+                  .HasForeignKey(e => e.PriceRequestId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Supplier)
+                  .WithMany(s => s.PriceQuotes)
+                  .HasForeignKey(e => e.SupplierId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            // Indexes
+            entity.HasIndex(e => e.QuoteNumber);
+            entity.HasIndex(e => e.QuoteDate);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => new { e.PriceRequestId, e.SupplierId });
         });
     }
 }

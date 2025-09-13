@@ -45,6 +45,11 @@ public class MaterialType
     /// Gets the purchase order lines using this material type
     /// </summary>
     public ICollection<PurchaseOrderLine> PurchaseOrderLines { get; set; } = new HashSet<PurchaseOrderLine>();
+
+    /// <summary>
+    /// Gets the price request lines using this material type
+    /// </summary>
+    public ICollection<PriceRequestLine> PriceRequestLines { get; set; } = new HashSet<PriceRequestLine>();
 }
 
 /// <summary>
@@ -90,6 +95,11 @@ public class ProfileType
     /// Gets the purchase order lines using this profile type
     /// </summary>
     public ICollection<PurchaseOrderLine> PurchaseOrderLines { get; set; } = new HashSet<PurchaseOrderLine>();
+
+    /// <summary>
+    /// Gets the price request lines using this profile type
+    /// </summary>
+    public ICollection<PriceRequestLine> PriceRequestLines { get; set; } = new HashSet<PriceRequestLine>();
 }
 
 /// <summary>
@@ -135,4 +145,9 @@ public class SteelGrade
     /// Gets the purchase order lines using this steel grade
     /// </summary>
     public ICollection<PurchaseOrderLine> PurchaseOrderLines { get; set; } = new HashSet<PurchaseOrderLine>();
+
+    /// <summary>
+    /// Gets the price request lines using this steel grade
+    /// </summary>
+    public ICollection<PriceRequestLine> PriceRequestLines { get; set; } = new HashSet<PriceRequestLine>();
 }
