@@ -18,29 +18,39 @@ public class AssemblyListUploadService
     private readonly IFeatureGate _featureGateService;
     private readonly ILogger<AssemblyListUploadService> _logger;
 
+    static AssemblyListUploadService()
+    {
+        // Set EPPlus license context for non-commercial use
+        // Note: This uses the legacy API as the new License property is read-only in EPPlus 8.1.1
+        // This warning will be resolved when EPPlus provides the correct initialization method
+#pragma warning disable CS0618 // Type or member is obsolete
+        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+#pragma warning restore CS0618 // Type or member is obsolete
+    }
+
     public AssemblyListUploadService(
-        AppDbContext context, 
+        AppDbContext context,
         IFeatureGate featureGateService,
         ILogger<AssemblyListUploadService> logger)
     {
         _context = context;
         _featureGateService = featureGateService;
         _logger = logger;
-        
-        // Set EPPlus license for non-commercial use
-        ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
     }
 
     /// <summary>
     /// Uploads and processes an assembly list file based on tenant tier
     /// </summary>
     public async Task<AssemblyListUploadResult> UploadAssemblyListAsync(
-        Guid tenantId, 
-        int crmProjectId, 
-        IFormFile file, 
+        Guid tenantId,
+        int crmProjectId,
+        IFormFile file,
         string assemblyListName,
         ColumnMapping? columnMapping = null)
     {
+        ArgumentNullException.ThrowIfNull(file);
+        ArgumentException.ThrowIfNullOrWhiteSpace(assemblyListName);
+
         // Check feature access based on tier
         var hasBasicUpload = await _featureGateService.IsFeatureEnabledAsync(tenantId, FeatureKeys.AssemblyListUpload);
         var hasTier2Upload = await _featureGateService.IsFeatureEnabledAsync(tenantId, FeatureKeys.AssemblyListUploadTier2);
@@ -78,7 +88,7 @@ public class AssemblyListUploadService
         {
             using var stream = file.OpenReadStream();
             using var package = new ExcelPackage(stream);
-            
+
             var worksheet = package.Workbook.Worksheets.FirstOrDefault();
             if (worksheet == null)
             {
@@ -129,7 +139,7 @@ public class AssemblyListUploadService
         {
             using var stream = file.OpenReadStream();
             using var package = new ExcelPackage(stream);
-            
+
             var worksheet = package.Workbook.Worksheets.FirstOrDefault();
             if (worksheet == null)
             {
@@ -137,9 +147,9 @@ public class AssemblyListUploadService
             }
 
             var columns = DetectColumns(worksheet);
-            return new ColumnDetectionResult 
-            { 
-                Success = true, 
+            return new ColumnDetectionResult
+            {
+                Success = true,
                 Columns = columns,
                 RowCount = worksheet.Dimension?.Rows ?? 0
             };
@@ -147,10 +157,10 @@ public class AssemblyListUploadService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error detecting columns in uploaded file");
-            return new ColumnDetectionResult 
-            { 
-                Success = false, 
-                ErrorMessage = "Error reading the Excel file." 
+            return new ColumnDetectionResult
+            {
+                Success = false,
+                ErrorMessage = "Error reading the Excel file."
             };
         }
     }
@@ -159,15 +169,15 @@ public class AssemblyListUploadService
     /// Processes file using AI-powered parsing (Tier 3)
     /// </summary>
     private async Task<AssemblyListUploadResult> ProcessWithAiParsing(
-        int crmProjectId, 
-        string assemblyListName, 
-        ExcelWorksheet worksheet, 
+        int crmProjectId,
+        string assemblyListName,
+        ExcelWorksheet worksheet,
         string fileName)
     {
         // AI-powered column detection
         var detectedMapping = DetectColumnsWithAi(worksheet);
-        
-        _logger.LogInformation("AI detected column mapping for project {ProjectId}: {Mapping}", 
+
+        _logger.LogInformation("AI detected column mapping for project {ProjectId}: {Mapping}",
             crmProjectId, JsonSerializer.Serialize(detectedMapping));
 
         return await ProcessAssemblyData(crmProjectId, assemblyListName, worksheet, detectedMapping, fileName);
@@ -177,13 +187,13 @@ public class AssemblyListUploadService
     /// Processes file using manual column mapping (Tier 2)
     /// </summary>
     private async Task<AssemblyListUploadResult> ProcessWithManualMapping(
-        int crmProjectId, 
-        string assemblyListName, 
-        ExcelWorksheet worksheet, 
+        int crmProjectId,
+        string assemblyListName,
+        ExcelWorksheet worksheet,
         ColumnMapping columnMapping,
         string fileName)
     {
-        _logger.LogInformation("Processing with manual column mapping for project {ProjectId}: {Mapping}", 
+        _logger.LogInformation("Processing with manual column mapping for project {ProjectId}: {Mapping}",
             crmProjectId, JsonSerializer.Serialize(columnMapping));
 
         return await ProcessAssemblyData(crmProjectId, assemblyListName, worksheet, columnMapping, fileName);
@@ -193,9 +203,9 @@ public class AssemblyListUploadService
     /// Core method to process assembly data and save to database
     /// </summary>
     private async Task<AssemblyListUploadResult> ProcessAssemblyData(
-        int crmProjectId, 
-        string assemblyListName, 
-        ExcelWorksheet worksheet, 
+        int crmProjectId,
+        string assemblyListName,
+        ExcelWorksheet worksheet,
         ColumnMapping mapping,
         string fileName)
     {
@@ -271,7 +281,7 @@ public class AssemblyListUploadService
         _context.AssemblyParts.AddRange(assemblyParts);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Successfully imported {AssemblyCount} assemblies and {PartCount} assembly parts for project {ProjectId}", 
+        _logger.LogInformation("Successfully imported {AssemblyCount} assemblies and {PartCount} assembly parts for project {ProjectId}",
             assemblies.Count, assemblyParts.Count, crmProjectId);
 
         return new AssemblyListUploadResult
@@ -301,7 +311,7 @@ public class AssemblyListUploadService
         foreach (var column in columns)
         {
             var header = column.Value.ToLowerInvariant();
-            
+
             if (header.Contains("assembly") && header.Contains("mark") || header.Contains("assembly_mark"))
                 mapping.AssemblyMarkColumn = column.Key;
             else if (header.Contains("description") || header.Contains("desc"))
@@ -382,7 +392,7 @@ public class AssemblyListUploadService
     private string GetCellValue(ExcelWorksheet worksheet, int row, int? col)
     {
         if (!col.HasValue || col.Value < 1) return string.Empty;
-        
+
         return worksheet.Cells[row, col.Value].Value?.ToString() ?? string.Empty;
     }
 

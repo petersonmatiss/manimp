@@ -49,12 +49,14 @@ public class CrmService
     /// </summary>
     public async Task<Customer> CreateCustomerAsync(Customer customer)
     {
+        ArgumentNullException.ThrowIfNull(customer);
+
         _context.Customers.Add(customer);
         await _context.SaveChangesAsync();
-        
-        _logger.LogInformation("Created customer {CustomerName} with ID {CustomerId}", 
+
+        _logger.LogInformation("Created customer {CustomerName} with ID {CustomerId}",
             customer.CompanyName, customer.CustomerId);
-        
+
         return customer;
     }
 
@@ -63,29 +65,39 @@ public class CrmService
     /// </summary>
     public async Task<Customer> UpdateCustomerAsync(Customer customer)
     {
+        ArgumentNullException.ThrowIfNull(customer);
+
         _context.Customers.Update(customer);
         await _context.SaveChangesAsync();
-        
-        _logger.LogInformation("Updated customer {CustomerName} with ID {CustomerId}", 
+
+        _logger.LogInformation("Updated customer {CustomerName} with ID {CustomerId}",
             customer.CompanyName, customer.CustomerId);
-        
+
         return customer;
     }
 
     /// <summary>
     /// Soft deletes a customer by setting IsActive = false
     /// </summary>
-    public async Task DeleteCustomerAsync(int customerId)
+    /// <returns>True if the customer was deleted, false if not found</returns>
+    public async Task<bool> DeleteCustomerAsync(int customerId)
     {
+        if (customerId <= 0)
+            return false;
+
         var customer = await _context.Customers.FindAsync(customerId);
         if (customer != null)
         {
             customer.IsActive = false;
             await _context.SaveChangesAsync();
-            
-            _logger.LogInformation("Soft deleted customer {CustomerName} with ID {CustomerId}", 
+
+            _logger.LogInformation("Soft deleted customer {CustomerName} with ID {CustomerId}",
                 customer.CompanyName, customer.CustomerId);
+            return true;
         }
+
+        _logger.LogWarning("Attempted to delete non-existent customer with ID {CustomerId}", customerId);
+        return false;
     }
 
     #endregion
@@ -109,6 +121,8 @@ public class CrmService
     /// </summary>
     public async Task<Contact> CreateContactAsync(Contact contact)
     {
+        ArgumentNullException.ThrowIfNull(contact);
+
         // If this is being set as primary, ensure only one primary contact per customer
         if (contact.IsPrimary)
         {
@@ -117,10 +131,10 @@ public class CrmService
 
         _context.Contacts.Add(contact);
         await _context.SaveChangesAsync();
-        
-        _logger.LogInformation("Created contact {ContactName} for customer ID {CustomerId}", 
+
+        _logger.LogInformation("Created contact {ContactName} for customer ID {CustomerId}",
             contact.FullName, contact.CustomerId);
-        
+
         return contact;
     }
 
@@ -137,10 +151,10 @@ public class CrmService
 
         _context.Contacts.Update(contact);
         await _context.SaveChangesAsync();
-        
-        _logger.LogInformation("Updated contact {ContactName} with ID {ContactId}", 
+
+        _logger.LogInformation("Updated contact {ContactName} with ID {ContactId}",
             contact.FullName, contact.ContactId);
-        
+
         return contact;
     }
 
@@ -170,23 +184,23 @@ public class CrmService
         if (contact != null)
         {
             contact.IsActive = false;
-            
+
             // If this was the primary contact, make another contact primary if available
             if (contact.IsPrimary)
             {
                 var anotherContact = await _context.Contacts
                     .Where(c => c.CustomerId == contact.CustomerId && c.IsActive && c.ContactId != contactId)
                     .FirstOrDefaultAsync();
-                
+
                 if (anotherContact != null)
                 {
                     anotherContact.IsPrimary = true;
                 }
             }
-            
+
             await _context.SaveChangesAsync();
-            
-            _logger.LogInformation("Soft deleted contact {ContactName} with ID {ContactId}", 
+
+            _logger.LogInformation("Soft deleted contact {ContactName} with ID {ContactId}",
                 contact.FullName, contact.ContactId);
         }
     }
@@ -240,10 +254,10 @@ public class CrmService
     {
         _context.CrmProjects.Add(project);
         await _context.SaveChangesAsync();
-        
-        _logger.LogInformation("Created CRM project {ProjectName} with ID {ProjectId}", 
+
+        _logger.LogInformation("Created CRM project {ProjectName} with ID {ProjectId}",
             project.Name, project.CrmProjectId);
-        
+
         return project;
     }
 
@@ -254,10 +268,10 @@ public class CrmService
     {
         _context.CrmProjects.Update(project);
         await _context.SaveChangesAsync();
-        
-        _logger.LogInformation("Updated CRM project {ProjectName} with ID {ProjectId}", 
+
+        _logger.LogInformation("Updated CRM project {ProjectName} with ID {ProjectId}",
             project.Name, project.CrmProjectId);
-        
+
         return project;
     }
 
@@ -274,9 +288,9 @@ public class CrmService
             {
                 project.Notes = string.IsNullOrEmpty(project.Notes) ? notes : $"{project.Notes}\n{notes}";
             }
-            
+
             await _context.SaveChangesAsync();
-            
+
             _logger.LogInformation("Updated delivery information for project {ProjectId}", crmProjectId);
         }
     }
@@ -335,11 +349,11 @@ public class CrmService
         if (assembly != null)
         {
             assembly.ProgressPercentage = Math.Max(0, Math.Min(100, progressPercentage)); // Clamp between 0-100
-            
+
             if (!string.IsNullOrEmpty(notes))
             {
-                assembly.ManufacturingNotes = string.IsNullOrEmpty(assembly.ManufacturingNotes) 
-                    ? notes 
+                assembly.ManufacturingNotes = string.IsNullOrEmpty(assembly.ManufacturingNotes)
+                    ? notes
                     : $"{assembly.ManufacturingNotes}\n{DateTime.UtcNow:yyyy-MM-dd}: {notes}";
             }
 
@@ -348,7 +362,7 @@ public class CrmService
             {
                 assembly.ManufacturingStarted = DateTime.UtcNow;
             }
-            
+
             if (progressPercentage >= 100 && assembly.ManufacturingCompleted == null)
             {
                 assembly.ManufacturingCompleted = DateTime.UtcNow;
@@ -359,8 +373,8 @@ public class CrmService
             }
 
             await _context.SaveChangesAsync();
-            
-            _logger.LogInformation("Updated progress for assembly {AssemblyMark} to {Progress}%", 
+
+            _logger.LogInformation("Updated progress for assembly {AssemblyMark} to {Progress}%",
                 assembly.AssemblyMark, progressPercentage);
         }
     }
@@ -392,10 +406,10 @@ public class CrmService
     {
         _context.Deliveries.Add(delivery);
         await _context.SaveChangesAsync();
-        
-        _logger.LogInformation("Created delivery {DeliveryNumber} for project {ProjectId}", 
+
+        _logger.LogInformation("Created delivery {DeliveryNumber} for project {ProjectId}",
             delivery.DeliveryNumber, delivery.CrmProjectId);
-        
+
         return delivery;
     }
 
@@ -421,20 +435,20 @@ public class CrmService
         if (delivery != null)
         {
             delivery.Status = status;
-            
+
             if (actualDeliveryDate.HasValue)
             {
                 delivery.ActualDeliveryDate = actualDeliveryDate.Value;
             }
-            
+
             if (!string.IsNullOrEmpty(notes))
             {
                 delivery.Notes = string.IsNullOrEmpty(delivery.Notes) ? notes : $"{delivery.Notes}\n{notes}";
             }
 
             await _context.SaveChangesAsync();
-            
-            _logger.LogInformation("Updated delivery {DeliveryNumber} status to {Status}", 
+
+            _logger.LogInformation("Updated delivery {DeliveryNumber} status to {Status}",
                 delivery.DeliveryNumber, status);
         }
     }

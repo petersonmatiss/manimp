@@ -289,12 +289,12 @@ public static class FeatureKeys
     public const string CuttingListOptimization = "cutting_list_optimization";
     public const string DeliveryManagement = "delivery_management";
     public const string PackingListGeneration = "packing_list_generation";
-    
+
     // Tiered File Upload Features
     public const string AssemblyListUpload = "assembly_list_upload";
     public const string AssemblyListUploadTier2 = "assembly_list_upload_tier2"; // Manual column mapping
     public const string AssemblyListUploadTier3 = "assembly_list_upload_tier3"; // AI-powered parsing
-    
+
     // Manufacturing Progress Tracking
     public const string ManufacturingProgress = "manufacturing_progress";
     public const string ProgressReporting = "progress_reporting";
