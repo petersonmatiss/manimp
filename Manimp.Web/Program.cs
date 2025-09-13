@@ -5,6 +5,7 @@ using Manimp.Web.Components;
 using Manimp.Directory.Data;
 using Manimp.Data.Contexts;
 using Manimp.Shared.Interfaces;
+using Manimp.Services;
 using Manimp.Services.Implementation;
 using Manimp.Services.Middleware;
 
@@ -31,6 +32,8 @@ builder.Services.AddMudServices();
 // Register services (commented out for demo - requires database)
 // builder.Services.AddScoped<ITenantService, TenantService>();
 // builder.Services.AddScoped<ITenantDbContext, TenantDbContextService>();
+// builder.Services.AddScoped<IProjectLimitService, ProjectLimitService>();
+// builder.Services.AddScoped<IEN1090ComplianceService, EN1090ComplianceService>();
 
 // Add health checks for container deployment (commented out for demo)
 // builder.Services.AddHealthChecks()
