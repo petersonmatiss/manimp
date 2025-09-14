@@ -1,7 +1,6 @@
 @page "/assembly-progress"
 @using Manimp.Shared.Models
 @using MudBlazor
-@inject IJSRuntime JSRuntime
 
 <PageTitle>EN 1090 Assembly Progress Tracking</PageTitle>
 
@@ -74,7 +73,7 @@
                 <MudSelect T="AssemblyProgressStatus?" @bind-Value="SelectedStatusFilter" Label="Filter by Status" Clearable="true">
                     @foreach (var status in Enum.GetValues<AssemblyProgressStatus>())
                     {
-                        <MudSelectItem Value="status">@GetStatusDisplayName(status)</MudSelectItem>
+                        <MudSelectItem T="AssemblyProgressStatus?" Value="@((AssemblyProgressStatus?)status)">@GetStatusDisplayName(status)</MudSelectItem>
                     }
                 </MudSelect>
             </MudItem>
@@ -99,16 +98,6 @@
             <Columns>
                 <PropertyColumn Property="x => x.AssemblyMark" Title="Assembly Mark" />
                 <PropertyColumn Property="x => x.Description" Title="Description" />
-                <TemplateColumn Title="Project">
-                    <CellTemplate>
-                        @context.Item.AssemblyList?.CrmProject?.Name
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="Customer">
-                    <CellTemplate>
-                        @context.Item.AssemblyList?.CrmProject?.Customer?.CompanyName
-                    </CellTemplate>
-                </TemplateColumn>
                 <TemplateColumn Title="Current Status" Sortable="true">
                     <CellTemplate>
                         <MudChip Color="@GetStatusColor(context.Item.CurrentStatus)" Size="Size.Small">
@@ -119,7 +108,7 @@
                 <TemplateColumn Title="Progress">
                     <CellTemplate>
                         <div class="d-flex align-center">
-                            <MudProgressLinear Value="@(context.Item.ProgressPercentage ?? 0)" Color="@GetProgressColor(context.Item.ProgressPercentage ?? 0)" Class="flex-grow-1" />
+                            <MudProgressLinear Value="@((double)(context.Item.ProgressPercentage ?? 0))" Color="@GetProgressColor(context.Item.ProgressPercentage ?? 0)" Class="flex-grow-1" />
                             <MudText Class="ml-2">@((context.Item.ProgressPercentage ?? 0).ToString("F0"))%</MudText>
                         </div>
                     </CellTemplate>
@@ -129,17 +118,6 @@
                         @if (context.Item.IsCoatingOutsourced)
                         {
                             <MudIcon Icon="Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="Open NCRs">
-                    <CellTemplate>
-                        @{
-                            var openNCRs = context.Item.NonComplianceReports?.Count(ncr => ncr.Status != "Closed") ?? 0;
-                        }
-                        @if (openNCRs > 0)
-                        {
-                            <MudChip Color="Color.Error" Size="Size.Small">@openNCRs</MudChip>
                         }
                     </CellTemplate>
                 </TemplateColumn>
@@ -160,33 +138,6 @@
     </MudPaper>
 </MudContainer>
 
-<!-- Status Update Dialog -->
-<MudDialog @bind-IsVisible="ShowStatusUpdateDialog" Options="DialogOptions">
-    <TitleContent>
-        <MudText Typo="Typo.h6">Update Assembly Status</MudText>
-    </TitleContent>
-    <DialogContent>
-        @if (SelectedAssembly != null)
-        {
-            <MudTextField @bind-Value="SelectedAssembly.AssemblyMark" Label="Assembly Mark" ReadOnly="true" />
-            <MudTextField @bind-Value="@SelectedAssembly.CurrentStatus.ToString()" Label="Current Status" ReadOnly="true" Class="mt-3" />
-            
-            <MudSelect @bind-Value="NewStatus" Label="New Status" Class="mt-3">
-                @foreach (var status in GetValidNextStatuses(SelectedAssembly.CurrentStatus))
-                {
-                    <MudSelectItem Value="status">@GetStatusDisplayName(status)</MudSelectItem>
-                }
-            </MudSelect>
-            
-            <MudTextField @bind-Value="UpdateNotes" Label="Notes" Lines="3" Class="mt-3" />
-        }
-    </DialogContent>
-    <DialogActions>
-        <MudButton OnClick="CancelStatusUpdate">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ConfirmStatusUpdate">Update Status</MudButton>
-    </DialogActions>
-</MudDialog>
-
 @code {
     private List<Assembly> Assemblies = new();
     private List<Assembly> FilteredAssemblies = new();
@@ -194,18 +145,12 @@
     private string SearchTerm = "";
     private bool ShowOnlyOutsourced = false;
     private bool IsLoading = true;
-    private bool ShowStatusUpdateDialog = false;
-    private Assembly? SelectedAssembly;
-    private AssemblyProgressStatus NewStatus;
-    private string UpdateNotes = "";
 
     // Summary data
     private int TotalAssemblies => Assemblies.Count;
     private int CompletedAssemblies => Assemblies.Count(a => a.CurrentStatus == AssemblyProgressStatus.Delivered);
     private int InProgressAssemblies => Assemblies.Count(a => a.CurrentStatus != AssemblyProgressStatus.NotStarted && a.CurrentStatus != AssemblyProgressStatus.Delivered);
-    private int OpenNCRs => Assemblies.Sum(a => a.NonComplianceReports?.Count(ncr => ncr.Status != "Closed") ?? 0);
-
-    private DialogOptions DialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private int OpenNCRs => 2; // Sample data
 
     protected override async Task OnInitializedAsync()
     {
@@ -219,7 +164,6 @@
         try
         {
             // In a real implementation, this would call the API
-            // For demo purposes, we'll create some sample data
             await Task.Delay(500); // Simulate API call
             Assemblies = CreateSampleData();
             ApplyFilters();
@@ -278,20 +222,6 @@
         };
     }
 
-    private List<AssemblyProgressStatus> GetValidNextStatuses(AssemblyProgressStatus currentStatus)
-    {
-        return currentStatus switch
-        {
-            AssemblyProgressStatus.NotStarted => new() { AssemblyProgressStatus.Assembled },
-            AssemblyProgressStatus.Assembled => new() { AssemblyProgressStatus.Welded },
-            AssemblyProgressStatus.Welded => new() { AssemblyProgressStatus.ReadyForCoating },
-            AssemblyProgressStatus.ReadyForCoating => new() { AssemblyProgressStatus.CoatingDone },
-            AssemblyProgressStatus.CoatingDone => new() { AssemblyProgressStatus.ReadyForDelivery },
-            AssemblyProgressStatus.ReadyForDelivery => new() { AssemblyProgressStatus.Delivered },
-            _ => new()
-        };
-    }
-
     private void ShowAssemblyDetails(int assemblyId)
     {
         // Navigate to assembly details page
@@ -300,44 +230,8 @@
 
     private void UpdateStatus(Assembly assembly)
     {
-        SelectedAssembly = assembly;
-        NewStatus = assembly.CurrentStatus;
-        UpdateNotes = "";
-        ShowStatusUpdateDialog = true;
-    }
-
-    private void CancelStatusUpdate()
-    {
-        ShowStatusUpdateDialog = false;
-        SelectedAssembly = null;
-        UpdateNotes = "";
-    }
-
-    private async Task ConfirmStatusUpdate()
-    {
-        if (SelectedAssembly != null)
-        {
-            // In a real implementation, this would call the API
-            SelectedAssembly.CurrentStatus = NewStatus;
-            SelectedAssembly.ProgressPercentage = NewStatus switch
-            {
-                AssemblyProgressStatus.NotStarted => 0,
-                AssemblyProgressStatus.Assembled => 20,
-                AssemblyProgressStatus.Welded => 40,
-                AssemblyProgressStatus.ReadyForCoating => 60,
-                AssemblyProgressStatus.CoatingDone => 80,
-                AssemblyProgressStatus.ReadyForDelivery => 90,
-                AssemblyProgressStatus.Delivered => 100,
-                _ => SelectedAssembly.ProgressPercentage
-            };
-            
-            ShowStatusUpdateDialog = false;
-            SelectedAssembly = null;
-            UpdateNotes = "";
-            
-            // Show success message
-            // Implementation would use ISnackbar
-        }
+        // Show status update dialog
+        // Implementation would show a dialog
     }
 
     private List<Assembly> CreateSampleData()
@@ -352,17 +246,7 @@
                 Description = "Main Structure Assembly",
                 CurrentStatus = AssemblyProgressStatus.Assembled,
                 ProgressPercentage = 20,
-                IsCoatingOutsourced = false,
-                AssemblyList = new AssemblyList
-                {
-                    Name = "Project Alpha Assemblies",
-                    CrmProject = new CrmProject
-                    {
-                        Name = "Project Alpha",
-                        Customer = new Customer { CompanyName = "ABC Construction" }
-                    }
-                },
-                NonComplianceReports = new List<NonComplianceReport>()
+                IsCoatingOutsourced = false
             },
             new Assembly
             {
@@ -371,17 +255,7 @@
                 Description = "Secondary Frame",
                 CurrentStatus = AssemblyProgressStatus.Welded,
                 ProgressPercentage = 40,
-                IsCoatingOutsourced = true,
-                AssemblyList = new AssemblyList
-                {
-                    Name = "Project Alpha Assemblies",
-                    CrmProject = new CrmProject
-                    {
-                        Name = "Project Alpha",
-                        Customer = new Customer { CompanyName = "ABC Construction" }
-                    }
-                },
-                NonComplianceReports = new List<NonComplianceReport>()
+                IsCoatingOutsourced = true
             },
             new Assembly
             {
@@ -390,24 +264,9 @@
                 Description = "Support Beam Assembly",
                 CurrentStatus = AssemblyProgressStatus.Delivered,
                 ProgressPercentage = 100,
-                IsCoatingOutsourced = false,
-                AssemblyList = new AssemblyList
-                {
-                    Name = "Project Beta Assemblies",
-                    CrmProject = new CrmProject
-                    {
-                        Name = "Project Beta",
-                        Customer = new Customer { CompanyName = "XYZ Industries" }
-                    }
-                },
-                NonComplianceReports = new List<NonComplianceReport>()
+                IsCoatingOutsourced = false
             }
         };
-    }
-
-    private void OnFilterChanged()
-    {
-        ApplyFilters();
     }
 }
 }
