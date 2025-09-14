@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Manimp.Directory.Data;
 using Manimp.Shared.Interfaces;
+using Manimp.Services;
 using Manimp.Services.Implementation;
 using Manimp.Services.Middleware;
 
@@ -21,6 +22,8 @@ builder.Services.AddScoped<ICompanyRegistrationService, CompanyRegistrationServi
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITenantDbContext, TenantDbContextService>();
 builder.Services.AddScoped<IFeatureGate, FeatureGateService>();
+builder.Services.AddScoped<IProjectLimitService, ProjectLimitService>();
+builder.Services.AddScoped<IEN1090ComplianceService, EN1090ComplianceService>();
 
 var app = builder.Build();
 

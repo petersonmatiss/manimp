@@ -1,0 +1,515 @@
+@page "/projects/en1090"
+@using Manimp.Shared.Models
+@using Manimp.Services
+@* @inject IEN1090ComplianceService ComplianceService *@
+@* @inject IProjectLimitService ProjectLimitService *@
+@inject IJSRuntime JSRuntime
+
+<PageTitle>EN 1090 Project Management</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudPaper Class="pa-8" Elevation="4">
+        <MudText Typo="Typo.h4" Class="mb-6">EN 1090 Compliance Project Management</MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            Manage projects with EN 1090 European standard compliance for structural steelwork execution.
+            Projects are automatically assigned tiers based on execution class requirements.
+        </MudText>
+
+        @if (IsLoading)
+        {
+            <MudProgressCircular Indeterminate="true" />
+            <MudText>Loading project data...</MudText>
+        }
+        else if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">
+                @ErrorMessage
+            </MudAlert>
+        }
+        else
+        {
+            <!-- Project Limit Status -->
+            <MudGrid Class="mb-6">
+                <MudItem xs="12" md="4">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.Assignment" Size="Size.Large" Color="Color.Primary" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">Monthly Projects</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Primary">@ProjectsUsed/@TotalProjectLimit</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        @RemainingProjects remaining this month
+                                    </MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.Security" Size="Size.Large" Color="Color.Success" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">EN 1090 Ready</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Success">@CompliantProjects</MudText>
+                                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                        projects with complete traceability
+                                    </MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center justify-space-between">
+                                <div class="d-flex align-center">
+                                    <MudIcon Icon="Icons.Material.Filled.Add" Size="Size.Large" Color="Color.Warning" Class="mr-3"/>
+                                    <div>
+                                        <MudText Typo="Typo.h6">Addon Projects</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                            Need more projects?
+                                        </MudText>
+                                    </div>
+                                </div>
+                                <MudButton Variant="Variant.Outlined" 
+                                           Color="Color.Warning" 
+                                           Size="Size.Small"
+                                           OnClick="PurchaseAddonProjects"
+                                           Disabled="RemainingProjects > 5">
+                                    Purchase
+                                </MudButton>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Project Creation Form -->
+            <MudExpansionPanels Class="mb-6">
+                <MudExpansionPanel Text="Create New Project" MaxHeight="500">
+                    <MudForm @ref="ProjectForm" @bind-IsValid="@IsFormValid">
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewProject.Name" 
+                                              Label="Project Name" 
+                                              Required="true"
+                                              RequiredError="Project name is required" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="ExecutionClass" 
+                                           Label="EN 1090 Execution Class" 
+                                           Required="true"
+                                           RequiredError="Execution class is required">
+                                    @foreach (var exc in EN1090Constants.ExecutionClasses.All)
+                                    {
+                                        <MudSelectItem Value="@exc">@exc</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="NewProject.Description" 
+                                              Label="Description" 
+                                              Lines="3" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="StartDate" 
+                                               Label="Start Date" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="EndDate" 
+                                               Label="End Date" />
+                            </MudItem>
+                            
+                            @if (!string.IsNullOrWhiteSpace(ExecutionClass))
+                            {
+                                <MudItem xs="12">
+                                    <MudCard Elevation="1" Class="pa-4">
+                                        <MudText Typo="Typo.h6" Class="mb-2">
+                                            Required Subscription Tier: @GetRequiredSubscriptionTier(ExecutionClass)
+                                        </MudText>
+                                        <MudText Typo="Typo.body2" Class="mb-3">
+                                            @GetSubscriptionTierDescription(GetRequiredSubscriptionTier(ExecutionClass))
+                                        </MudText>
+                                        
+                                        @if (ComplianceRequirements.Any())
+                                        {
+                                            <MudText Typo="Typo.subtitle2" Class="mb-2">Compliance Requirements:</MudText>
+                                            <MudList Dense="true" T="string">
+                                                @foreach (var req in ComplianceRequirements)
+                                                {
+                                                    <MudListItem Icon="Icons.Material.Filled.CheckCircle" IconColor="Color.Success" T="string">
+                                                        <div>
+                                                            <MudText Typo="Typo.body2"><strong>@req.Key:</strong> @req.Value</MudText>
+                                                        </div>
+                                                    </MudListItem>
+                                                }
+                                            </MudList>
+                                        }
+                                    </MudCard>
+                                </MudItem>
+                            }
+                            
+                            <MudItem xs="12" Class="d-flex justify-end gap-2">
+                                <MudButton Variant="Variant.Outlined" 
+                                           OnClick="ClearForm">
+                                    Clear
+                                </MudButton>
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Primary" 
+                                           OnClick="CreateProject"
+                                           Disabled="@(!IsFormValid || !CanCreateProject)"
+                                           StartIcon="Icons.Material.Filled.Add">
+                                    Create Project
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudForm>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+            <!-- Projects List -->
+            <MudText Typo="Typo.h5" Class="mb-4">Current Projects</MudText>
+            
+            @if (Projects.Any())
+            {
+                <MudDataGrid Items="@Projects" 
+                             Filterable="true" 
+                             SortMode="SortMode.Multiple"
+                             Groupable="true">
+                    <Columns>
+                        <PropertyColumn Property="x => x.Name" Title="Project Name" />
+                        <PropertyColumn Property="x => x.ExecutionClass" Title="Execution Class">
+                            <CellTemplate>
+                                <MudChip Color="@GetExecutionClassColor(context.Item.ExecutionClass)" 
+                                         Size="Size.Small">
+                                    @context.Item.ExecutionClass
+                                </MudChip>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.StartDate" Title="Start Date" Format="MM/dd/yyyy" />
+                        <PropertyColumn Property="x => x.EndDate" Title="End Date" Format="MM/dd/yyyy" />
+                        <PropertyColumn Property="x => x.IsActive" Title="Status">
+                            <CellTemplate>
+                                <MudChip Color="@(context.Item.IsActive ? Color.Success : Color.Default)" 
+                                         Size="Size.Small">
+                                    @(context.Item.IsActive ? "Active" : "Inactive")
+                                </MudChip>
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <TemplateColumn Title="Actions" Sortable="false">
+                            <CellTemplate>
+                                <MudIconButton Icon="Icons.Material.Filled.Edit" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => EditProject(context.Item))" />
+                                <MudIconButton Icon="Icons.Material.Filled.Visibility" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => ViewProject(context.Item))" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+            else
+            {
+                <MudPaper Class="pa-8 text-center" Elevation="1">
+                    <MudIcon Icon="Icons.Material.Filled.Assignment" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Typo="Typo.h6" Class="mt-4">No Projects Yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Create your first EN 1090 compliant project using the form above.
+                    </MudText>
+                </MudPaper>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+    private bool IsFormValid;
+    private MudForm ProjectForm = null!;
+
+    // Project limit tracking
+    private int ProjectsUsed = 0;
+    private int TotalProjectLimit = 10;
+    private int RemainingProjects = 10;
+    private int CompliantProjects = 0;
+    private bool CanCreateProject => RemainingProjects > 0;
+
+    // Form data
+    private Project NewProject = new();
+    private string? _executionClass;
+    private string? ExecutionClass 
+    { 
+        get => _executionClass; 
+        set 
+        { 
+            _executionClass = value;
+            NewProject.ExecutionClass = value;
+            OnExecutionClassChanged(value);
+        } 
+    }
+    private DateTime? StartDate;
+    private DateTime? EndDate;
+    private Dictionary<string, object> ComplianceRequirements = new();
+
+    // Mock data for demonstration
+    private List<Project> Projects = new();
+    private MockEN1090ComplianceService MockComplianceService = null!;
+
+    protected override void OnInitialized()
+    {
+        // Create mock compliance service
+        MockComplianceService = new MockEN1090ComplianceService();
+        
+        LoadProjectData();
+        GenerateMockProjects();
+    }
+
+    private void LoadProjectData()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+
+            // For demo purposes, we'll use a mock tenant ID
+            var mockTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+
+            // Load project limits (this would normally work with real database)
+            // var limits = await ProjectLimitService.GetProjectLimitAsync(mockTenantId, DateTime.UtcNow.ToString("yyyy-MM"));
+            // ProjectsUsed = limits.ProjectsCreated;
+            // TotalProjectLimit = limits.TotalLimit;
+            // RemainingProjects = limits.RemainingProjects;
+
+            // Mock values for demo
+            ProjectsUsed = 3;
+            TotalProjectLimit = 10;
+            RemainingProjects = 7;
+            CompliantProjects = 2;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading project data: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GenerateMockProjects()
+    {
+        Projects = new List<Project>
+        {
+            new() { 
+                ProjectId = 1, 
+                Name = "Office Building Frame", 
+                ExecutionClass = "EXC2", 
+                StartDate = DateTime.Now.AddDays(-30),
+                EndDate = DateTime.Now.AddDays(60),
+                IsActive = true,
+                Description = "Steel frame for 5-story office building"
+            },
+            new() { 
+                ProjectId = 2, 
+                Name = "Bridge Span Assembly", 
+                ExecutionClass = "EXC3", 
+                StartDate = DateTime.Now.AddDays(-15),
+                EndDate = DateTime.Now.AddDays(90),
+                IsActive = true,
+                Description = "Main span assemblies for highway bridge"
+            },
+            new() { 
+                ProjectId = 3, 
+                Name = "Petrochemical Plant Structure", 
+                ExecutionClass = "EXC4", 
+                StartDate = DateTime.Now.AddDays(-45),
+                EndDate = DateTime.Now.AddDays(120),
+                IsActive = true,
+                Description = "Critical safety structures for petrochemical facility"
+            }
+        };
+    }
+
+    private void OnExecutionClassChanged(string? value)
+    {
+        NewProject.ExecutionClass = value;
+        if (!string.IsNullOrWhiteSpace(NewProject.ExecutionClass))
+        {
+            var requiredTier = MockComplianceService.GetRequiredSubscriptionTier(NewProject.ExecutionClass);
+            ComplianceRequirements = MockComplianceService.GetComplianceRequirements(requiredTier);
+        }
+        else
+        {
+            ComplianceRequirements.Clear();
+        }
+        StateHasChanged();
+    }
+
+    private async Task CreateProject()
+    {
+        try
+        {
+            if (!CanCreateProject)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Monthly project limit reached. Please purchase additional projects.");
+                return;
+            }
+
+            // Set dates and metadata
+            NewProject.StartDate = StartDate;
+            NewProject.EndDate = EndDate;
+            NewProject.CreatedMonth = DateTime.UtcNow.ToString("yyyy-MM");
+            NewProject.IsActive = true;
+
+            // In a real app, this would save to database and increment the project count
+            // var mockTenantId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+            // await ProjectLimitService.IncrementProjectCountAsync(mockTenantId);
+
+            // Mock: Add to local list and update counters
+            NewProject.ProjectId = Projects.Count + 1;
+            Projects.Add(new Project 
+            { 
+                ProjectId = NewProject.ProjectId,
+                Name = NewProject.Name,
+                Description = NewProject.Description,
+                ExecutionClass = NewProject.ExecutionClass,
+                StartDate = NewProject.StartDate,
+                EndDate = NewProject.EndDate,
+                CreatedMonth = NewProject.CreatedMonth,
+                IsActive = NewProject.IsActive
+            });
+
+            ProjectsUsed++;
+            RemainingProjects--;
+
+            await JSRuntime.InvokeVoidAsync("alert", $"Project '{NewProject.Name}' created successfully!");
+            ClearForm();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error creating project: {ex.Message}");
+        }
+    }
+
+    private void ClearForm()
+    {
+        NewProject = new Project();
+        ExecutionClass = null;
+        StartDate = null;
+        EndDate = null;
+        ComplianceRequirements.Clear();
+        ProjectForm?.ResetAsync();
+    }
+
+    private async Task PurchaseAddonProjects()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "Addon project purchase would be implemented here with payment processing.");
+    }
+
+    private async Task EditProject(Project project)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"Edit project '{project.Name}' - Implementation pending");
+    }
+
+    private async Task ViewProject(Project project)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"View project '{project.Name}' details - Implementation pending");
+    }
+
+    private int GetRequiredSubscriptionTier(string? executionClass)
+    {
+        return MockComplianceService.GetRequiredSubscriptionTier(executionClass);
+    }
+
+    private string GetSubscriptionTierDescription(int tier)
+    {
+        return tier switch
+        {
+            1 => "Basic - EXC1 only, standard documentation requirements",
+            2 => "Professional - EXC1-EXC3, enhanced quality requirements and documentation",
+            3 => "Enterprise - All execution classes (EXC1-EXC4), complete traceability and independent inspection",
+            _ => "Unknown subscription tier"
+        };
+    }
+
+    private Color GetExecutionClassColor(string? executionClass)
+    {
+        return executionClass switch
+        {
+            "EXC1" => Color.Info,
+            "EXC2" => Color.Primary,
+            "EXC3" => Color.Warning,
+            "EXC4" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    /// <summary>
+    /// Mock implementation of EN1090ComplianceService for demo purposes
+    /// </summary>
+    public class MockEN1090ComplianceService
+    {
+        public bool IsValidExecutionClass(string? executionClass)
+        {
+            if (string.IsNullOrWhiteSpace(executionClass))
+                return false;
+
+            return EN1090Constants.ExecutionClasses.All.Contains(executionClass.ToUpperInvariant());
+        }
+
+        public int GetRequiredSubscriptionTier(string? executionClass)
+        {
+            return EN1090Constants.SubscriptionTiers.GetRequiredSubscriptionTier(executionClass);
+        }
+
+        public Dictionary<string, object> GetComplianceRequirements(int subscriptionTier)
+        {
+            var requirements = new Dictionary<string, object>
+            {
+                ["SubscriptionTier"] = subscriptionTier,
+                ["TierName"] = EN1090Constants.SubscriptionTiers.GetTierName(subscriptionTier),
+                ["AllowedExecutionClasses"] = EN1090Constants.SubscriptionTiers.GetAllowedExecutionClasses(subscriptionTier)
+            };
+
+            switch (subscriptionTier)
+            {
+                case EN1090Constants.SubscriptionTiers.Basic:
+                    requirements["MaterialTraceability"] = "Basic documentation";
+                    requirements["WeldingProcedures"] = "Standard procedures";
+                    requirements["TestCertificates"] = "EN 10204 2.1 minimum";
+                    requirements["Documentation"] = "Standard project documentation";
+                    requirements["ExecutionClasses"] = "EXC1 only";
+                    requirements["Features"] = new[] { "Basic inventory", "Simple project tracking" };
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Professional:
+                    requirements["MaterialTraceability"] = "Enhanced with batch tracking";
+                    requirements["WeldingProcedures"] = "Qualified procedures required";
+                    requirements["TestCertificates"] = "EN 10204 3.1 minimum";
+                    requirements["Documentation"] = "Enhanced documentation and inspection records";
+                    requirements["ExecutionClasses"] = "EXC1, EXC2, EXC3";
+                    requirements["Features"] = new[] { "Full inventory management", "Procurement features", "Advanced project tracking" };
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Enterprise:
+                    requirements["MaterialTraceability"] = "Full traceability with country of origin";
+                    requirements["WeldingProcedures"] = "Fully qualified procedures with PQR";
+                    requirements["TestCertificates"] = "EN 10204 3.2 required";
+                    requirements["Documentation"] = "Complete documentation package including NDT";
+                    requirements["QualityControl"] = "Independent inspection required";
+                    requirements["ExecutionClasses"] = "EXC1, EXC2, EXC3, EXC4 (all classes)";
+                    requirements["Features"] = new[] { "Full CRM", "Sourcing management", "Complete compliance suite", "Advanced analytics" };
+                    break;
+            }
+
+            return requirements;
+        }
+    }
+}

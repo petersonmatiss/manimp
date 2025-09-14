@@ -44,9 +44,9 @@ Manimp/
 - **Tier 2 Procurement and Remnants Module**: Advanced procurement tracking with POs, automated remnant creation, and full material lineage
 - **Tier 3 Sourcing Module**: Price request and quote workflow for RFQ management and procurement planning
 - **Feature Gating System**: Subscription-based feature access control with three-tier plans and override support
+- **EN 1090 Compliance**: Steel construction manufacturing compliance system with subscription-tier based feature access, execution class validation, material traceability, and monthly project limits
 
 ### 🚧 Coming Next
-- **EN 1090 Compliance**: Steel construction manufacturing compliance system with execution class determination, material traceability, welding management, and quality documentation
 - **Inventory UI**: User interface for managing profiles, materials, and usage
 - **Procurement UI**: User interface for purchase orders and supplier management
 - **Sourcing UI**: User interface for price requests and quote management
@@ -245,6 +245,135 @@ Individual tenants can have feature overrides for:
 - **Custom Agreements**: Special feature access based on contracts
 - **Beta Testing**: Early access to new features
 - **Granular Control**: Enable/disable specific features regardless of plan
+
+### Implementation
+
+The feature gating system uses:
+- **Central Directory Database**: Stores tenant subscriptions and feature definitions
+- **Service Layer**: `IFeatureGate` service validates tenant access to features
+- **Middleware**: `FeatureGateMiddleware` enforces feature access at the request level
+- **UI Components**: Feature-aware components show/hide functionality based on tenant permissions
+
+## EN 1090 Compliance System
+
+The EN 1090 compliance system ensures structural steelwork projects meet European standards for execution of steel structures. This comprehensive module provides full traceability, quality control, and documentation management based on tenant subscription tiers.
+
+### Subscription Tier System
+
+EN 1090 features are gated by tenant subscription tiers, determining which execution classes and compliance features are available:
+
+#### Basic Tier (Tier 1)
+- **Allowed Execution Classes**: EXC1 only
+- **Requirements**: Basic documentation, standard procedures
+- **Certificates**: EN 10204 2.1 minimum (optional)
+- **Features**: Basic inventory, simple project tracking
+- **Use Cases**: Simple structural components, basic buildings
+
+#### Professional Tier (Tier 2) 
+- **Allowed Execution Classes**: EXC1, EXC2, EXC3
+- **Requirements**: Enhanced documentation, batch tracking mandatory for EXC2-EXC3
+- **Certificates**: EN 10204 3.1 minimum for EXC2-EXC3
+- **Features**: Full inventory management, procurement features, advanced project tracking
+- **Use Cases**: Bridges, industrial buildings, most commercial structures
+
+#### Enterprise Tier (Tier 3)
+- **Allowed Execution Classes**: All classes (EXC1, EXC2, EXC3, EXC4)
+- **Requirements**: Complete traceability, country of origin tracking
+- **Certificates**: EN 10204 3.2 required for EXC4
+- **Features**: Full CRM, sourcing management, complete compliance suite, advanced analytics
+- **Use Cases**: Petrochemical plants, seismic zones, critical infrastructure
+
+### Subscription-Based Access Control
+
+- Tenant subscription tier determines available execution classes
+- Real-time validation prevents creating projects beyond subscription tier
+- Material compliance requirements scale with subscription tier
+- Feature access controlled through centralized feature gating system
+
+### Material Traceability
+
+**Enhanced ProfileInventory with EN 1090 fields:**
+- `MaterialBatch` - Heat/batch number for full material lineage
+- `MillTestCertificateNumber` - Mill test certificate reference
+- `CertificateType` - EN 10204 certificate type (2.1, 2.2, 3.1, 3.2)
+- `MaterialStandard` - Applicable standard (e.g., EN 10025-2)
+- `ManufacturingRoute` - Production method (Hot Rolled, Cold Formed)
+- `SurfaceCondition` - Material condition (As Rolled, Shot Blasted)
+- `CountryOfOrigin` - Required for EXC4 projects
+- `TraceabilityNotes` - Additional compliance documentation
+
+### Project Management Features
+
+**Enhanced Project model with compliance tracking:**
+- `ExecutionClass` - EN 1090 execution class (EXC1-EXC4)
+- `ProjectTier` - Automatically calculated from execution class
+- `CreatedMonth` - For monthly project limit tracking
+
+**Monthly Project Limits:**
+- Base limit: 10 projects per month per tenant
+- Addon purchases: Additional projects available for purchase
+- Automatic tracking: `TenantProjectLimit` tracks usage by month
+- Overflow protection: Project creation blocked when limit reached
+
+### Compliance Validation
+
+**Real-time validation services:**
+- `IEN1090ComplianceService` - Validates material compliance for each subscription tier
+- Automatic subscription tier-based requirement checking
+- Certificate type validation against execution class requirements
+- Missing data identification for compliance gaps
+
+**Validation Rules:**
+- **Basic Tier**: Minimal validation, basic documentation
+- **Professional Tier**: Material batch required for EXC2-EXC3, certificate 3.1+ required
+- **Enterprise Tier**: All fields required, certificate 3.2 mandatory, country of origin required
+
+### User Interface
+
+**Project Management (`/projects/en1090`):**
+- Project creation with execution class selection
+- Subscription tier requirement display and validation
+- Monthly project limit tracking with addon purchase option
+- Compliance requirements display for each tier
+
+**Material Traceability (`/inventory/en1090`):**
+- Enhanced material entry forms with all EN 1090 fields
+- Real-time compliance validation for all tiers
+- Material compliance indicators (✓/✗ for each tier)
+- Batch filtering and certificate type filtering
+
+### Database Schema
+
+**New/Enhanced Tables:**
+```sql
+-- Enhanced Projects table
+Projects
+├── ExecutionClass (nvarchar(10)) -- EXC1, EXC2, EXC3, EXC4
+├── ProjectTier (int, nullable) -- 1, 2, or 3
+└── CreatedMonth (nvarchar(7)) -- YYYY-MM format
+
+-- Enhanced ProfileInventories table  
+ProfileInventories
+├── MaterialBatch (nvarchar(100))
+├── MillTestCertificateNumber (nvarchar(100))
+├── CertificateType (nvarchar(10)) -- 2.1, 2.2, 3.1, 3.2
+├── MaterialStandard (nvarchar(50))
+├── ManufacturingRoute (nvarchar(50))
+├── SurfaceCondition (nvarchar(50))
+├── CountryOfOrigin (nvarchar(100))
+└── TraceabilityNotes (nvarchar(2000))
+
+-- New project limit tracking (Directory DB)
+TenantProjectLimits
+├── TenantProjectLimitId (int, PK, identity)
+├── TenantId (uniqueidentifier, FK → Tenants)
+├── Month (nvarchar(7)) -- YYYY-MM format
+├── ProjectsCreated (int)
+├── BaseLimit (int, default 10)
+├── AddonProjects (int, default 0)
+├── CreatedUtc (datetime2)
+└── UpdatedUtc (datetime2)
+```
 
 ### Implementation
 
@@ -507,6 +636,38 @@ dotnet build
 ```bash
 dotnet test
 ```
+
+### Code Quality Standards
+Manimp follows strict code quality standards to maintain a professional, maintainable codebase:
+
+#### Formatting
+All code must pass formatting validation:
+```bash
+# Check formatting issues
+dotnet format --verify-no-changes
+
+# Auto-fix formatting issues  
+dotnet format
+```
+
+#### Build Standards
+All builds must be warning-free:
+```bash
+# Release build with zero warnings required
+dotnet build --configuration Release
+```
+
+#### Common Quality Issues Fixed
+- **Whitespace formatting**: Consistent indentation and line spacing
+- **Unnecessary async methods**: Remove async keywords from methods that don't use await
+- **Component attribute casing**: Use correct case-sensitive attributes (e.g., `@bind-Value` not `@bind-Checked` for MudSwitch)
+
+#### Pre-commit Checklist
+Before committing changes, always run:
+1. `dotnet format` - Fix any formatting issues
+2. `dotnet build --configuration Release` - Ensure zero warnings/errors
+3. `dotnet test` - Verify all tests pass
+4. Manual testing of changed functionality
 
 ## Support & Documentation
 

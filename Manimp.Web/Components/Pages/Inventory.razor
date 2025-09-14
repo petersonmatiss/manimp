@@ -1,0 +1,583 @@
+@page "/inventory"
+@using Manimp.Shared.Models
+@using Manimp.Services
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Material Inventory</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudPaper Class="pa-8" Elevation="4">
+        <!-- Header Section -->
+        <div class="d-flex justify-space-between align-center mb-6">
+            <div>
+                <MudText Typo="Typo.h4" Class="mb-2">Material Inventory Management</MudText>
+                <MudText Typo="Typo.body1" Color="Color.Secondary">
+                    Manage your steel profile inventory with integrated EN 1090 traceability support
+                </MudText>
+            </div>
+            <div class="d-flex gap-2">
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Info"
+                           StartIcon="Icons.Material.Filled.Assignment"
+                           Href="/inventory/en1090">
+                    EN 1090 Traceability
+                </MudButton>
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary"
+                           StartIcon="Icons.Material.Filled.Add"
+                           OnClick="OpenAddMaterialDialog">
+                    Add Material
+                </MudButton>
+            </div>
+        </div>
+
+        @if (IsLoading)
+        {
+            <MudProgressCircular Indeterminate="true" />
+            <MudText>Loading inventory data...</MudText>
+        }
+        else if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">
+                @ErrorMessage
+            </MudAlert>
+        }
+        else
+        {
+            <!-- Summary Statistics -->
+            <MudGrid Class="mb-6">
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">Total Lots</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Primary">@TotalLots</MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.Straighten" Size="Size.Large" Color="Color.Info" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">Total Pieces</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Info">@TotalPieces</MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.Scale" Size="Size.Large" Color="Color.Warning" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">Total Weight</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Warning">@($"{TotalWeight:N0} kg")</MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" sm="6" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.VerifiedUser" Size="Size.Large" Color="Color.Success" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">EN 1090 Ready</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Success">@EN1090ReadyLots</MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Filter Section -->
+            <MudExpansionPanels Class="mb-4">
+                <MudExpansionPanel Text="Filters and Search">
+                    <MudGrid>
+                        <MudItem xs="12" md="4">
+                            <MudTextField @bind-Value="SearchText" 
+                                          Label="Search" 
+                                          Placeholder="Lot number, size, batch..."
+                                          Adornment="Adornment.Start"
+                                          AdornmentIcon="Icons.Material.Filled.Search"
+                                          OnKeyUp="OnSearchChanged" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSelect @bind-Value="SelectedProfileFilter" 
+                                       Label="Profile Type"
+                                       Clearable="true">
+                                @foreach (var profile in ProfileTypes)
+                                {
+                                    <MudSelectItem Value="@profile">@profile</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudSwitch @bind-Value="ShowOnlyEN1090Compliant" 
+                                       Label="EN 1090 Compliant Only" 
+                                       Color="Color.Success" 
+                                       T="bool" />
+                        </MudItem>
+                    </MudGrid>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+            <!-- Inventory Data Grid -->
+            <MudDataGrid Items="@FilteredInventory" 
+                         Filterable="true" 
+                         SortMode="SortMode.Multiple"
+                         Groupable="true"
+                         Dense="true"
+                         Hover="true">
+                <Columns>
+                    <PropertyColumn Property="x => x.LotNumber" Title="Lot Number" />
+                    <PropertyColumn Property="x => x.Size" Title="Size/Profile" />
+                    <PropertyColumn Property="x => x.PiecesOnHand" Title="Pieces">
+                        <CellTemplate>
+                            <div class="d-flex align-center">
+                                <MudText Typo="Typo.body2">@context.Item.PiecesOnHand</MudText>
+                                @if (context.Item.PiecesOnHand <= 5)
+                                {
+                                    <MudIcon Icon="Icons.Material.Filled.Warning" 
+                                             Color="Color.Warning" 
+                                             Size="Size.Small" 
+                                             Class="ml-2" />
+                                }
+                            </div>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Length" Title="Length (m)" Format="F2" />
+                    <PropertyColumn Property="x => x.WeightPerPiece" Title="Weight/pc (kg)" Format="F1" />
+                    
+                    <!-- EN 1090 Traceability Columns -->
+                    <PropertyColumn Property="x => x.MaterialBatch" Title="Batch">
+                        <CellTemplate>
+                            @if (!string.IsNullOrWhiteSpace(context.Item.MaterialBatch))
+                            {
+                                <MudText Typo="Typo.body2">@context.Item.MaterialBatch</MudText>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Default" Size="Size.Small" Variant="Variant.Outlined">
+                                    No Batch
+                                </MudChip>
+                            }
+                        </CellTemplate>
+                    </PropertyColumn>
+                    
+                    <PropertyColumn Property="x => x.CertificateType" Title="Certificate">
+                        <CellTemplate>
+                            @if (!string.IsNullOrWhiteSpace(context.Item.CertificateType))
+                            {
+                                <MudChip Color="@GetCertificateColor(context.Item.CertificateType)" 
+                                         Size="Size.Small">
+                                    EN 10204 @context.Item.CertificateType
+                                </MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Color="Color.Default" Size="Size.Small" Variant="Variant.Outlined">
+                                    No Cert
+                                </MudChip>
+                            }
+                        </CellTemplate>
+                    </PropertyColumn>
+                    
+                    <TemplateColumn Title="EN 1090 Status" Sortable="false">
+                        <CellTemplate>
+                            @{
+                                var en1090Status = GetEN1090Status(context.Item);
+                            }
+                            <MudTooltip Text="@en1090Status.Tooltip">
+                                <MudChip Color="@en1090Status.Color" 
+                                         Size="Size.Small" 
+                                         Icon="@en1090Status.Icon">
+                                    @en1090Status.Text
+                                </MudChip>
+                            </MudTooltip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    
+                    <PropertyColumn Property="x => x.ReceivedDate" Title="Received" Format="yyyy-MM-dd" />
+                    
+                    <TemplateColumn Title="Actions" Sortable="false">
+                        <CellTemplate>
+                            <div class="d-flex gap-1">
+                                <MudIconButton Icon="Icons.Material.Filled.Edit" 
+                                               Size="Size.Small" 
+                                               Color="Color.Primary"
+                                               OnClick="@(() => EditMaterial(context.Item))" />
+                                <MudIconButton Icon="Icons.Material.Filled.Assignment" 
+                                               Size="Size.Small" 
+                                               Color="Color.Info"
+                                               OnClick="@(() => ViewEN1090Details(context.Item))" />
+                                <MudIconButton Icon="Icons.Material.Filled.Remove" 
+                                               Size="Size.Small" 
+                                               Color="Color.Secondary"
+                                               OnClick="@(() => UseFromInventory(context.Item))" />
+                            </div>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+
+            @if (!FilteredInventory.Any())
+            {
+                <MudPaper Class="pa-8 text-center mt-4" Elevation="1">
+                    <MudIcon Icon="Icons.Material.Filled.Inventory2" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Typo="Typo.h6" Class="mt-4">No Materials Found</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @if (ShowOnlyEN1090Compliant)
+                        {
+                            <text>No EN 1090 compliant materials match your filters. Try clearing the EN 1090 filter.</text>
+                        }
+                        else
+                        {
+                            <text>Add your first material to get started with inventory management.</text>
+                        }
+                    </MudText>
+                </MudPaper>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+    private string SearchText = "";
+    private string? SelectedProfileFilter;
+    private bool ShowOnlyEN1090Compliant = false;
+
+    // Summary stats
+    private int TotalLots = 0;
+    private int TotalPieces = 0;
+    private decimal TotalWeight = 0;
+    private int EN1090ReadyLots = 0;
+
+    // Mock data for demonstration
+    private List<ProfileInventory> AllInventory = new();
+    private List<string> ProfileTypes = new();
+    private MockEN1090ComplianceService MockComplianceService = new();
+
+    private IEnumerable<ProfileInventory> FilteredInventory => 
+        AllInventory.Where(FilterInventoryItem);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadInventoryData();
+        GenerateMockInventory();
+        UpdateSummaryStats();
+    }
+
+    private async Task LoadInventoryData()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+
+            // In a real app, this would load from database
+            await Task.Delay(800); // Simulate loading
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading inventory data: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GenerateMockInventory()
+    {
+        AllInventory = new List<ProfileInventory>
+        {
+            new() { 
+                ProfileInventoryId = 1,
+                LotNumber = "LOT-2024-001", 
+                Size = "W12x26",
+                PiecesOnHand = 20,
+                Length = 12.0m,
+                WeightPerPiece = 38.5m,
+                MaterialBatch = "HN-240315-A1",
+                MillTestCertificateNumber = "MTC-2024-0315",
+                CertificateType = "3.2",
+                MaterialStandard = "EN 10025-2",
+                ManufacturingRoute = "Hot Rolled",
+                SurfaceCondition = "As Rolled",
+                CountryOfOrigin = "Germany",
+                TraceabilityNotes = "Full documentation package available",
+                ReceivedDate = DateTime.Now.AddDays(-30)
+            },
+            new() { 
+                ProfileInventoryId = 2,
+                LotNumber = "LOT-2024-002", 
+                Size = "L4x4x1/2",
+                PiecesOnHand = 50,
+                Length = 6.0m,
+                WeightPerPiece = 12.8m,
+                MaterialBatch = "HN-240320-B2",
+                MillTestCertificateNumber = "MTC-2024-0320",
+                CertificateType = "3.1",
+                MaterialStandard = "EN 10025-2",
+                ManufacturingRoute = "Hot Rolled",
+                SurfaceCondition = "Shot Blasted",
+                CountryOfOrigin = "Sweden",
+                ReceivedDate = DateTime.Now.AddDays(-15)
+            },
+            new() { 
+                ProfileInventoryId = 3,
+                LotNumber = "LOT-2024-003", 
+                Size = "HEB200",
+                PiecesOnHand = 15,
+                Length = 10.0m,
+                WeightPerPiece = 61.3m,
+                MaterialBatch = "", // Missing batch 
+                CertificateType = "2.1",
+                MaterialStandard = "EN 10025-2",
+                ManufacturingRoute = "Hot Rolled",
+                SurfaceCondition = "As Rolled",
+                ReceivedDate = DateTime.Now.AddDays(-7)
+            },
+            new() { 
+                ProfileInventoryId = 4,
+                LotNumber = "LOT-2024-004", 
+                Size = "IPE120",
+                PiecesOnHand = 3, // Low stock
+                Length = 8.0m,
+                WeightPerPiece = 10.4m,
+                MaterialBatch = "HN-240325-C3",
+                MillTestCertificateNumber = "MTC-2024-0325",
+                CertificateType = "3.1",
+                MaterialStandard = "EN 10025-2",
+                ManufacturingRoute = "Hot Rolled",
+                SurfaceCondition = "As Rolled",
+                CountryOfOrigin = "Belgium",
+                ReceivedDate = DateTime.Now.AddDays(-5)
+            },
+            new() { 
+                ProfileInventoryId = 5,
+                LotNumber = "LOT-2024-005", 
+                Size = "L6x6x3/4",
+                PiecesOnHand = 25,
+                Length = 12.0m,
+                WeightPerPiece = 27.2m,
+                // No EN 1090 traceability data - basic inventory only
+                ReceivedDate = DateTime.Now.AddDays(-20)
+            }
+        };
+
+        ProfileTypes = AllInventory.Select(i => i.Size).Distinct().OrderBy(s => s).ToList();
+    }
+
+    private void UpdateSummaryStats()
+    {
+        TotalLots = AllInventory.Count;
+        TotalPieces = AllInventory.Sum(i => i.PiecesOnHand);
+        TotalWeight = AllInventory.Sum(i => i.PiecesOnHand * i.WeightPerPiece);
+        EN1090ReadyLots = AllInventory.Count(i => HasEN1090Traceability(i));
+    }
+
+    private bool FilterInventoryItem(ProfileInventory item)
+    {
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(SearchText))
+        {
+            var searchLower = SearchText.ToLowerInvariant();
+            if (!item.LotNumber.ToLowerInvariant().Contains(searchLower) &&
+                !item.Size.ToLowerInvariant().Contains(searchLower) &&
+                !(item.MaterialBatch?.ToLowerInvariant().Contains(searchLower) == true))
+            {
+                return false;
+            }
+        }
+
+        // Profile type filter
+        if (!string.IsNullOrWhiteSpace(SelectedProfileFilter) && 
+            item.Size != SelectedProfileFilter)
+        {
+            return false;
+        }
+
+        // EN 1090 compliance filter
+        if (ShowOnlyEN1090Compliant && !HasEN1090Traceability(item))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool HasEN1090Traceability(ProfileInventory item)
+    {
+        return !string.IsNullOrWhiteSpace(item.MaterialBatch) && 
+               !string.IsNullOrWhiteSpace(item.CertificateType);
+    }
+
+    private (string Text, Color Color, string Icon, string Tooltip) GetEN1090Status(ProfileInventory item)
+    {
+        if (!HasEN1090Traceability(item))
+        {
+            return ("Basic", Color.Default, Icons.Material.Filled.Remove, "No EN 1090 traceability data");
+        }
+
+        // Check compliance for different tiers
+        var basicCompliant = MockComplianceService.ValidateMaterialCompliance(1, item.MaterialBatch, item.CertificateType, item.CountryOfOrigin).IsValid;
+        var professionalCompliant = MockComplianceService.ValidateMaterialCompliance(2, item.MaterialBatch, item.CertificateType, item.CountryOfOrigin).IsValid;
+        var enterpriseCompliant = MockComplianceService.ValidateMaterialCompliance(3, item.MaterialBatch, item.CertificateType, item.CountryOfOrigin).IsValid;
+
+        if (enterpriseCompliant)
+        {
+            return ("EXC1-4", Color.Success, Icons.Material.Filled.VerifiedUser, "Compliant for all execution classes (EXC1-EXC4)");
+        }
+        else if (professionalCompliant)
+        {
+            return ("EXC1-3", Color.Info, Icons.Material.Filled.Verified, "Compliant for execution classes EXC1-EXC3");
+        }
+        else if (basicCompliant)
+        {
+            return ("EXC1-2", Color.Warning, Icons.Material.Filled.CheckCircle, "Compliant for execution classes EXC1-EXC2");
+        }
+        else
+        {
+            return ("Issues", Color.Error, Icons.Material.Filled.Warning, "Has traceability data but compliance issues detected");
+        }
+    }
+
+    private Color GetCertificateColor(string? certificateType)
+    {
+        return certificateType switch
+        {
+            "2.1" => Color.Default,
+            "2.2" => Color.Info,
+            "3.1" => Color.Warning,
+            "3.2" => Color.Success,
+            _ => Color.Default
+        };
+    }
+
+    private async Task OnSearchChanged()
+    {
+        // Debounce search to avoid excessive filtering
+        await Task.Delay(300);
+        StateHasChanged();
+    }
+
+    private async Task OpenAddMaterialDialog()
+    {
+        await JSRuntime.InvokeVoidAsync("alert", "Add Material Dialog - Implementation pending. For now, use the EN 1090 Materials page to add materials with full traceability.");
+    }
+
+    private async Task EditMaterial(ProfileInventory item)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"Edit material '{item.LotNumber}' - Implementation pending");
+    }
+
+    private async Task ViewEN1090Details(ProfileInventory item)
+    {
+        var status = GetEN1090Status(item);
+        var message = $"EN 1090 Details for {item.LotNumber}:\n\n";
+        message += $"Status: {status.Text} - {status.Tooltip}\n";
+        message += $"Material Batch: {item.MaterialBatch ?? "Not available"}\n";
+        message += $"Certificate: {(item.CertificateType != null ? $"EN 10204 {item.CertificateType}" : "Not available")}\n";
+        message += $"Country of Origin: {item.CountryOfOrigin ?? "Not specified"}\n";
+        message += $"Mill Test Certificate: {item.MillTestCertificateNumber ?? "Not available"}\n\n";
+        message += "For full EN 1090 traceability management, visit the EN 1090 Materials page.";
+        
+        await JSRuntime.InvokeVoidAsync("alert", message);
+    }
+
+    private async Task UseFromInventory(ProfileInventory item)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"Use material from lot '{item.LotNumber}' - Implementation pending. This would create a usage log and update inventory levels.");
+    }
+}
+
+@code
+{
+    /// <summary>
+    /// Mock implementation of EN1090ComplianceService for demo purposes
+    /// </summary>
+    public class MockEN1090ComplianceService
+    {
+        public bool IsValidCertificateType(string? certificateType)
+        {
+            if (string.IsNullOrWhiteSpace(certificateType))
+                return true; // Optional field
+
+            return EN1090Constants.CertificateTypes.All.Contains(certificateType);
+        }
+
+        public (bool IsValid, List<string> Issues) ValidateMaterialCompliance(
+            int subscriptionTier, 
+            string? materialBatch, 
+            string? certificateType, 
+            string? countryOfOrigin)
+        {
+            var issues = new List<string>();
+
+            // Validate certificate type if provided
+            if (!string.IsNullOrWhiteSpace(certificateType) && !IsValidCertificateType(certificateType))
+            {
+                issues.Add($"Invalid certificate type: {certificateType}");
+            }
+
+            // Subscription tier-specific validations
+            switch (subscriptionTier)
+            {
+                case EN1090Constants.SubscriptionTiers.Basic:
+                    // Basic tier - minimal requirements for EXC1-EXC2
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Professional:
+                    if (string.IsNullOrWhiteSpace(materialBatch))
+                    {
+                        issues.Add("Material batch number is required for Professional tier projects");
+                    }
+                    if (string.IsNullOrWhiteSpace(certificateType))
+                    {
+                        issues.Add("Certificate type is required for Professional tier projects (EN 10204 3.1 minimum)");
+                    }
+                    else if (certificateType == EN1090Constants.CertificateTypes.Type21)
+                    {
+                        issues.Add("Certificate type 3.1 or higher is required for Professional tier projects");
+                    }
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Enterprise:
+                    if (string.IsNullOrWhiteSpace(materialBatch))
+                    {
+                        issues.Add("Material batch number is required for Enterprise tier projects");
+                    }
+                    if (string.IsNullOrWhiteSpace(certificateType))
+                    {
+                        issues.Add("Certificate type is required for Enterprise tier projects (EN 10204 3.2 required)");
+                    }
+                    else if (certificateType != EN1090Constants.CertificateTypes.Type32)
+                    {
+                        issues.Add("Certificate type 3.2 is required for Enterprise tier projects");
+                    }
+                    if (string.IsNullOrWhiteSpace(countryOfOrigin))
+                    {
+                        issues.Add("Country of origin is required for Enterprise tier projects");
+                    }
+                    break;
+            }
+
+            return (issues.Count == 0, issues);
+        }
+    }
+}

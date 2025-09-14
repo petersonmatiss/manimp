@@ -96,6 +96,20 @@ public class Project
     public DateTime? EndDate { get; set; }
 
     /// <summary>
+    /// Gets or sets the EN 1090 execution class (EXC1, EXC2, EXC3, EXC4)
+    /// </summary>
+    [MaxLength(10)]
+    public string? ExecutionClass { get; set; }
+
+
+
+    /// <summary>
+    /// Gets or sets the month when this project was created (YYYY-MM format)
+    /// </summary>
+    [MaxLength(7)]
+    public string? CreatedMonth { get; set; }
+
+    /// <summary>
     /// Gets or sets the row version for optimistic concurrency
     /// </summary>
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();

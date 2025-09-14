@@ -1,0 +1,681 @@
+@page "/inventory/en1090"
+@using Manimp.Shared.Models
+@using Manimp.Services
+@* @inject IEN1090ComplianceService ComplianceService *@
+@inject IJSRuntime JSRuntime
+
+<PageTitle>EN 1090 Material Traceability</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-8">
+    <MudPaper Class="pa-8" Elevation="4">
+        <MudText Typo="Typo.h4" Class="mb-6">EN 1090 Material Traceability Management</MudText>
+        <MudText Typo="Typo.body1" Class="mb-4">
+            Manage material inventory with full EN 1090 traceability compliance.
+            Track batch numbers, certificates, country of origin, and all required documentation.
+        </MudText>
+
+        @if (IsLoading)
+        {
+            <MudProgressCircular Indeterminate="true" />
+            <MudText>Loading material data...</MudText>
+        }
+        else if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">
+                @ErrorMessage
+            </MudAlert>
+        }
+        else
+        {
+            <!-- Compliance Summary -->
+            <MudGrid Class="mb-6">
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.Inventory" Size="Size.Large" Color="Color.Primary" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">Total Materials</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Primary">@TotalMaterials</MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.VerifiedUser" Size="Size.Large" Color="Color.Success" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">Fully Compliant</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Success">@FullyCompliantMaterials</MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.Warning" Size="Size.Large" Color="Color.Warning" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">Needs Attention</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Warning">@IncompleteCompliance</MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudCard Elevation="2">
+                        <MudCardContent>
+                            <div class="d-flex align-center">
+                                <MudIcon Icon="Icons.Material.Filled.Certificate" Size="Size.Large" Color="Color.Info" Class="mr-3"/>
+                                <div>
+                                    <MudText Typo="Typo.h6">3.2 Certificates</MudText>
+                                    <MudText Typo="Typo.h4" Color="Color.Info">@HighGradeCertificates</MudText>
+                                </div>
+                            </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
+            </MudGrid>
+
+            <!-- Material Entry Form -->
+            <MudExpansionPanels Class="mb-6">
+                <MudExpansionPanel Text="Add New Material with EN 1090 Traceability" MaxHeight="800">
+                    <MudForm @ref="MaterialForm" @bind-IsValid="@IsFormValid">
+                        <MudGrid>
+                            <!-- Basic Material Information -->
+                            <MudItem xs="12">
+                                <MudText Typo="Typo.h6" Class="mb-3">Basic Material Information</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewMaterial.LotNumber" 
+                                              Label="Lot Number" 
+                                              Required="true"
+                                              RequiredError="Lot number is required" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewMaterial.Size" 
+                                              Label="Size/Profile" 
+                                              Required="true"
+                                              RequiredError="Size is required"
+                                              Placeholder="e.g., W12x26, L4x4x1/2" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="NewMaterial.Length" 
+                                                 Label="Length" 
+                                                 Adornment="Adornment.End"
+                                                 AdornmentText="m"
+                                                 Required="true"
+                                                 Min="0.001m" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="NewMaterial.PiecesOnHand" 
+                                                 Label="Pieces" 
+                                                 Required="true"
+                                                 Min="1" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="NewMaterial.WeightPerPiece" 
+                                                 Label="Weight per Piece" 
+                                                 Adornment="Adornment.End"
+                                                 AdornmentText="kg"
+                                                 Required="true"
+                                                 Min="0.001m" />
+                            </MudItem>
+
+                            <!-- EN 1090 Traceability Information -->
+                            <MudItem xs="12">
+                                <MudDivider Class="my-4" />
+                                <MudText Typo="Typo.h6" Class="mb-3">EN 1090 Traceability Information</MudText>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewMaterial.MaterialBatch" 
+                                              Label="Material Batch/Heat Number" 
+                                              HelperText="Required for EXC3 and EXC4 projects" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewMaterial.MillTestCertificateNumber" 
+                                              Label="Mill Test Certificate Number" 
+                                              HelperText="Certificate reference number" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudSelect @bind-Value="NewMaterial.CertificateType" 
+                                           Label="EN 10204 Certificate Type"
+                                           HelperText="3.1 minimum for EXC3, 3.2 required for EXC4">
+                                    <MudSelectItem Value="@((string?)null)">None</MudSelectItem>
+                                    @foreach (var certType in EN1090Constants.CertificateTypes.All)
+                                    {
+                                        <MudSelectItem Value="@certType">@certType</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewMaterial.MaterialStandard" 
+                                              Label="Material Standard" 
+                                              Placeholder="e.g., EN 10025-2"
+                                              HelperText="Applicable material standard" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewMaterial.ManufacturingRoute" 
+                                              Label="Manufacturing Route" 
+                                              Placeholder="e.g., Hot Rolled, Cold Formed"
+                                              HelperText="How the material was manufactured" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewMaterial.SurfaceCondition" 
+                                              Label="Surface Condition" 
+                                              Placeholder="e.g., As Rolled, Shot Blasted"
+                                              HelperText="Current surface condition" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="NewMaterial.CountryOfOrigin" 
+                                              Label="Country of Origin" 
+                                              HelperText="Required for EXC4 projects" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="ReceivedDate" 
+                                               Label="Date Received" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="NewMaterial.TraceabilityNotes" 
+                                              Label="Traceability Notes" 
+                                              Lines="3"
+                                              HelperText="Additional notes for compliance documentation" />
+                            </MudItem>
+
+                            <!-- Compliance Validation -->
+                            @if (ValidationResults.Any())
+                            {
+                                <MudItem xs="12">
+                                    <MudCard Elevation="1" Class="pa-4">
+                                        <MudText Typo="Typo.h6" Class="mb-2">Compliance Validation</MudText>
+                                        @foreach (var tierResult in ValidationResults)
+                                        {
+                                            <MudCard Class="mb-2" Elevation="0" Style="border: 1px solid #e0e0e0;">
+                                                <MudCardContent Class="pa-3">
+                                                    <div class="d-flex align-center justify-space-between mb-2">
+                                                        <MudText Typo="Typo.subtitle1">Tier @tierResult.Key (EXC@(GetExecutionClassForTier(tierResult.Key)))</MudText>
+                                                        <MudIcon Icon="@(tierResult.Value.IsValid ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Warning)" 
+                                                                 Color="@(tierResult.Value.IsValid ? Color.Success : Color.Warning)" />
+                                                    </div>
+                                                    @if (!tierResult.Value.IsValid && tierResult.Value.Issues.Any())
+                                                    {
+                                                        <MudList Dense="true" T="string">
+                                                            @foreach (var issue in tierResult.Value.Issues)
+                                                            {
+                                                                <MudListItem Icon="Icons.Material.Filled.Warning" IconColor="Color.Warning" T="string">
+                                                                    <MudText Typo="Typo.body2">@issue</MudText>
+                                                                </MudListItem>
+                                                            }
+                                                        </MudList>
+                                                    }
+                                                    else if (tierResult.Value.IsValid)
+                                                    {
+                                                        <MudText Typo="Typo.body2" Color="Color.Success">✓ Compliant for this tier</MudText>
+                                                    }
+                                                </MudCardContent>
+                                            </MudCard>
+                                        }
+                                    </MudCard>
+                                </MudItem>
+                            }
+                            
+                            <MudItem xs="12" Class="d-flex justify-end gap-2">
+                                <MudButton Variant="Variant.Outlined" 
+                                           OnClick="ClearMaterialForm">
+                                    Clear
+                                </MudButton>
+                                <MudButton Variant="Variant.Outlined" 
+                                           Color="Color.Info"
+                                           OnClick="ValidateCompliance"
+                                           StartIcon="Icons.Material.Filled.Security">
+                                    Validate Compliance
+                                </MudButton>
+                                <MudButton Variant="Variant.Filled" 
+                                           Color="Color.Primary" 
+                                           OnClick="AddMaterial"
+                                           Disabled="@(!IsFormValid)"
+                                           StartIcon="Icons.Material.Filled.Add">
+                                    Add Material
+                                </MudButton>
+                            </MudItem>
+                        </MudGrid>
+                    </MudForm>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+
+            <!-- Materials List -->
+            <MudText Typo="Typo.h5" Class="mb-4">Material Inventory</MudText>
+            
+            @if (Materials.Any())
+            {
+                <MudDataGrid Items="@Materials" 
+                             Filterable="true" 
+                             SortMode="SortMode.Multiple"
+                             Groupable="true"
+                             Dense="true">
+                    <Columns>
+                        <PropertyColumn Property="x => x.LotNumber" Title="Lot Number" />
+                        <PropertyColumn Property="x => x.Size" Title="Size" />
+                        <PropertyColumn Property="x => x.PiecesOnHand" Title="Pieces" />
+                        <PropertyColumn Property="x => x.MaterialBatch" Title="Batch">
+                            <CellTemplate>
+                                @if (!string.IsNullOrWhiteSpace(context.Item.MaterialBatch))
+                                {
+                                    <MudText Typo="Typo.body2">@context.Item.MaterialBatch</MudText>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">-</MudText>
+                                }
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.CertificateType" Title="Certificate">
+                            <CellTemplate>
+                                @if (!string.IsNullOrWhiteSpace(context.Item.CertificateType))
+                                {
+                                    <MudChip Color="@GetCertificateColor(context.Item.CertificateType)" 
+                                             Size="Size.Small">
+                                        @context.Item.CertificateType
+                                    </MudChip>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">None</MudText>
+                                }
+                            </CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn Property="x => x.CountryOfOrigin" Title="Origin" />
+                        <TemplateColumn Title="Compliance" Sortable="false">
+                            <CellTemplate>
+                                <div class="d-flex gap-1">
+                                    @for (int tier = 1; tier <= 3; tier++)
+                                    {
+                                        var isCompliant = GetMaterialCompliance(context.Item, tier);
+                                        <MudTooltip Text="@($"Tier {tier} " + (isCompliant ? "Compliant" : "Non-compliant"))">
+                                            <MudIcon Icon="@(isCompliant ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel)" 
+                                                     Color="@(isCompliant ? Color.Success : Color.Error)" 
+                                                     Size="Size.Small" />
+                                        </MudTooltip>
+                                    }
+                                </div>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Actions" Sortable="false">
+                            <CellTemplate>
+                                <MudIconButton Icon="Icons.Material.Filled.Edit" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => EditMaterial(context.Item))" />
+                                <MudIconButton Icon="Icons.Material.Filled.Visibility" 
+                                               Size="Size.Small" 
+                                               OnClick="@(() => ViewMaterial(context.Item))" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            }
+            else
+            {
+                <MudPaper Class="pa-8 text-center" Elevation="1">
+                    <MudIcon Icon="Icons.Material.Filled.Inventory2" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Typo="Typo.h6" Class="mt-4">No Materials Yet</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Add your first material with EN 1090 traceability using the form above.
+                    </MudText>
+                </MudPaper>
+            }
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+    private bool IsFormValid;
+    private MudForm MaterialForm = null!;
+
+    // Summary stats
+    private int TotalMaterials = 0;
+    private int FullyCompliantMaterials = 0;
+    private int IncompleteCompliance = 0;
+    private int HighGradeCertificates = 0;
+
+    // Form data
+    private ProfileInventory NewMaterial = new();
+    private DateTime? ReceivedDate = DateTime.Now;
+    private Dictionary<int, (bool IsValid, List<string> Issues)> ValidationResults = new();
+
+    // Mock data for demonstration
+    private List<ProfileInventory> Materials = new();
+    private MockEN1090ComplianceService MockComplianceService = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadMaterialData();
+        GenerateMockMaterials();
+        UpdateSummaryStats();
+    }
+
+    private async Task LoadMaterialData()
+    {
+        try
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+
+            // In a real app, this would load from database
+            await Task.Delay(500); // Simulate loading
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error loading material data: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GenerateMockMaterials()
+    {
+        Materials = new List<ProfileInventory>
+        {
+            new() { 
+                ProfileInventoryId = 1,
+                LotNumber = "LOT-2024-001", 
+                Size = "W12x26",
+                PiecesOnHand = 20,
+                Length = 12.0m,
+                WeightPerPiece = 38.5m,
+                MaterialBatch = "HN-240315-A1",
+                MillTestCertificateNumber = "MTC-2024-0315",
+                CertificateType = "3.2",
+                MaterialStandard = "EN 10025-2",
+                ManufacturingRoute = "Hot Rolled",
+                SurfaceCondition = "As Rolled",
+                CountryOfOrigin = "Germany",
+                TraceabilityNotes = "Full documentation package available",
+                ReceivedDate = DateTime.Now.AddDays(-30)
+            },
+            new() { 
+                ProfileInventoryId = 2,
+                LotNumber = "LOT-2024-002", 
+                Size = "L4x4x1/2",
+                PiecesOnHand = 50,
+                Length = 6.0m,
+                WeightPerPiece = 12.8m,
+                MaterialBatch = "HN-240320-B2",
+                MillTestCertificateNumber = "MTC-2024-0320",
+                CertificateType = "3.1",
+                MaterialStandard = "EN 10025-2",
+                ManufacturingRoute = "Hot Rolled",
+                SurfaceCondition = "Shot Blasted",
+                CountryOfOrigin = "Sweden",
+                ReceivedDate = DateTime.Now.AddDays(-15)
+            },
+            new() { 
+                ProfileInventoryId = 3,
+                LotNumber = "LOT-2024-003", 
+                Size = "HEB200",
+                PiecesOnHand = 15,
+                Length = 10.0m,
+                WeightPerPiece = 61.3m,
+                MaterialBatch = "", // Missing batch - will show compliance issues
+                CertificateType = "2.1",
+                MaterialStandard = "EN 10025-2",
+                ManufacturingRoute = "Hot Rolled",
+                SurfaceCondition = "As Rolled",
+                ReceivedDate = DateTime.Now.AddDays(-7)
+            }
+        };
+    }
+
+    private void UpdateSummaryStats()
+    {
+        TotalMaterials = Materials.Count;
+        FullyCompliantMaterials = Materials.Count(m => GetMaterialCompliance(m, 3)); // Tier 3 is highest
+        IncompleteCompliance = TotalMaterials - FullyCompliantMaterials;
+        HighGradeCertificates = Materials.Count(m => m.CertificateType == "3.2");
+    }
+
+    private void ValidateCompliance()
+    {
+        ValidationResults.Clear();
+        
+        for (int tier = 1; tier <= 3; tier++)
+        {
+            var result = MockComplianceService.ValidateMaterialCompliance(
+                tier, 
+                NewMaterial.MaterialBatch, 
+                NewMaterial.CertificateType, 
+                NewMaterial.CountryOfOrigin);
+            
+            ValidationResults[tier] = result;
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task AddMaterial()
+    {
+        try
+        {
+            NewMaterial.ReceivedDate = ReceivedDate ?? DateTime.Now;
+            NewMaterial.OriginalPieces = NewMaterial.PiecesOnHand;
+
+            // In a real app, this would save to database
+            NewMaterial.ProfileInventoryId = Materials.Count + 1;
+            Materials.Add(new ProfileInventory 
+            { 
+                ProfileInventoryId = NewMaterial.ProfileInventoryId,
+                LotNumber = NewMaterial.LotNumber,
+                Size = NewMaterial.Size,
+                Length = NewMaterial.Length,
+                PiecesOnHand = NewMaterial.PiecesOnHand,
+                OriginalPieces = NewMaterial.OriginalPieces,
+                WeightPerPiece = NewMaterial.WeightPerPiece,
+                MaterialBatch = NewMaterial.MaterialBatch,
+                MillTestCertificateNumber = NewMaterial.MillTestCertificateNumber,
+                CertificateType = NewMaterial.CertificateType,
+                MaterialStandard = NewMaterial.MaterialStandard,
+                ManufacturingRoute = NewMaterial.ManufacturingRoute,
+                SurfaceCondition = NewMaterial.SurfaceCondition,
+                CountryOfOrigin = NewMaterial.CountryOfOrigin,
+                TraceabilityNotes = NewMaterial.TraceabilityNotes,
+                ReceivedDate = NewMaterial.ReceivedDate
+            });
+
+            UpdateSummaryStats();
+            await JSRuntime.InvokeVoidAsync("alert", $"Material '{NewMaterial.LotNumber}' added successfully!");
+            ClearMaterialForm();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error adding material: {ex.Message}");
+        }
+    }
+
+    private void ClearMaterialForm()
+    {
+        NewMaterial = new ProfileInventory();
+        ReceivedDate = DateTime.Now;
+        ValidationResults.Clear();
+        MaterialForm?.ResetAsync();
+    }
+
+    private bool GetMaterialCompliance(ProfileInventory material, int tier)
+    {
+        var result = MockComplianceService.ValidateMaterialCompliance(
+            tier, 
+            material.MaterialBatch, 
+            material.CertificateType, 
+            material.CountryOfOrigin);
+        
+        return result.IsValid;
+    }
+
+    private Color GetCertificateColor(string? certificateType)
+    {
+        return certificateType switch
+        {
+            "2.1" => Color.Default,
+            "2.2" => Color.Info,
+            "3.1" => Color.Warning,
+            "3.2" => Color.Success,
+            _ => Color.Default
+        };
+    }
+
+    private string GetExecutionClassForTier(int tier)
+    {
+        return tier switch
+        {
+            1 => "1-2", // Basic now supports EXC1 and EXC2
+            2 => "3",   // Professional adds EXC3
+            3 => "4",   // Enterprise adds EXC4
+            _ => "?"
+        };
+    }
+
+    private async Task EditMaterial(ProfileInventory material)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"Edit material '{material.LotNumber}' - Implementation pending");
+    }
+
+    private async Task ViewMaterial(ProfileInventory material)
+    {
+        await JSRuntime.InvokeVoidAsync("alert", $"View material '{material.LotNumber}' details - Implementation pending");
+    }
+}
+
+@code
+{
+    /// <summary>
+    /// Mock implementation of EN1090ComplianceService for demo purposes
+    /// </summary>
+    public class MockEN1090ComplianceService
+    {
+        public bool IsValidExecutionClass(string? executionClass)
+        {
+            if (string.IsNullOrWhiteSpace(executionClass))
+                return false;
+
+            return EN1090Constants.ExecutionClasses.All.Contains(executionClass.ToUpperInvariant());
+        }
+
+        public int GetRequiredSubscriptionTier(string? executionClass)
+        {
+            return EN1090Constants.SubscriptionTiers.GetRequiredSubscriptionTier(executionClass);
+        }
+
+        public bool IsValidCertificateType(string? certificateType)
+        {
+            if (string.IsNullOrWhiteSpace(certificateType))
+                return true; // Optional field
+
+            return EN1090Constants.CertificateTypes.All.Contains(certificateType);
+        }
+
+        public Dictionary<string, object> GetComplianceRequirements(int subscriptionTier)
+        {
+            var requirements = new Dictionary<string, object>
+            {
+                ["SubscriptionTier"] = subscriptionTier,
+                ["TierName"] = EN1090Constants.SubscriptionTiers.GetTierName(subscriptionTier),
+                ["AllowedExecutionClasses"] = EN1090Constants.SubscriptionTiers.GetAllowedExecutionClasses(subscriptionTier)
+            };
+
+            switch (subscriptionTier)
+            {
+                case EN1090Constants.SubscriptionTiers.Basic:
+                    requirements["MaterialTraceability"] = "Basic documentation";
+                    requirements["WeldingProcedures"] = "Standard procedures";
+                    requirements["TestCertificates"] = "EN 10204 2.1 minimum";
+                    requirements["Documentation"] = "Standard project documentation";
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Professional:
+                    requirements["MaterialTraceability"] = "Enhanced with batch tracking";
+                    requirements["WeldingProcedures"] = "Qualified procedures required";
+                    requirements["TestCertificates"] = "EN 10204 3.1 minimum";
+                    requirements["Documentation"] = "Enhanced documentation and inspection records";
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Enterprise:
+                    requirements["MaterialTraceability"] = "Full traceability with country of origin";
+                    requirements["WeldingProcedures"] = "Fully qualified procedures with PQR";
+                    requirements["TestCertificates"] = "EN 10204 3.2 required";
+                    requirements["Documentation"] = "Complete documentation package including NDT";
+                    requirements["QualityControl"] = "Independent inspection required";
+                    break;
+            }
+
+            return requirements;
+        }
+
+        public (bool IsValid, List<string> Issues) ValidateMaterialCompliance(
+            int subscriptionTier, 
+            string? materialBatch, 
+            string? certificateType, 
+            string? countryOfOrigin)
+        {
+            var issues = new List<string>();
+
+            // Validate certificate type if provided
+            if (!string.IsNullOrWhiteSpace(certificateType) && !IsValidCertificateType(certificateType))
+            {
+                issues.Add($"Invalid certificate type: {certificateType}");
+            }
+
+            // Subscription tier-specific validations
+            switch (subscriptionTier)
+            {
+                case EN1090Constants.SubscriptionTiers.Basic:
+                    // Basic tier - minimal requirements
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Professional:
+                    if (string.IsNullOrWhiteSpace(materialBatch))
+                    {
+                        issues.Add("Material batch number is required for Professional tier projects");
+                    }
+                    if (string.IsNullOrWhiteSpace(certificateType))
+                    {
+                        issues.Add("Certificate type is required for Professional tier projects (EN 10204 3.1 minimum)");
+                    }
+                    else if (certificateType == EN1090Constants.CertificateTypes.Type21)
+                    {
+                        issues.Add("Certificate type 3.1 or higher is required for Professional tier projects");
+                    }
+                    break;
+
+                case EN1090Constants.SubscriptionTiers.Enterprise:
+                    if (string.IsNullOrWhiteSpace(materialBatch))
+                    {
+                        issues.Add("Material batch number is required for Enterprise tier projects");
+                    }
+                    if (string.IsNullOrWhiteSpace(certificateType))
+                    {
+                        issues.Add("Certificate type is required for Enterprise tier projects (EN 10204 3.2 required)");
+                    }
+                    else if (certificateType != EN1090Constants.CertificateTypes.Type32)
+                    {
+                        issues.Add("Certificate type 3.2 is required for Enterprise tier projects");
+                    }
+                    if (string.IsNullOrWhiteSpace(countryOfOrigin))
+                    {
+                        issues.Add("Country of origin is required for Enterprise tier projects");
+                    }
+                    break;
+            }
+
+            return (issues.Count == 0, issues);
+        }
+    }
+}

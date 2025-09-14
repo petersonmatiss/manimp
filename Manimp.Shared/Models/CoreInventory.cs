@@ -121,6 +121,55 @@ public class ProfileInventory
     /// </summary>
     public int? ProjectId { get; set; }
 
+    // EN 1090 Traceability fields
+    /// <summary>
+    /// Gets or sets the material batch/heat number for traceability (EN 1090 requirement)
+    /// </summary>
+    [MaxLength(100)]
+    public string? MaterialBatch { get; set; }
+
+    /// <summary>
+    /// Gets or sets the mill test certificate number (EN 1090 requirement)
+    /// </summary>
+    [MaxLength(100)]
+    public string? MillTestCertificateNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets the EN 10204 certificate type (2.1, 2.2, 3.1, 3.2)
+    /// </summary>
+    [MaxLength(10)]
+    public string? CertificateType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the material standard reference (e.g., EN 10025-2)
+    /// </summary>
+    [MaxLength(50)]
+    public string? MaterialStandard { get; set; }
+
+    /// <summary>
+    /// Gets or sets the manufacturing route (e.g., Hot Rolled, Cold Formed)
+    /// </summary>
+    [MaxLength(50)]
+    public string? ManufacturingRoute { get; set; }
+
+    /// <summary>
+    /// Gets or sets the surface condition (e.g., As Rolled, Shot Blasted, Pickled)
+    /// </summary>
+    [MaxLength(50)]
+    public string? SurfaceCondition { get; set; }
+
+    /// <summary>
+    /// Gets or sets the country of origin for the material
+    /// </summary>
+    [MaxLength(100)]
+    public string? CountryOfOrigin { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional traceability notes for compliance documentation
+    /// </summary>
+    [MaxLength(2000)]
+    public string? TraceabilityNotes { get; set; }
+
     // Navigation properties
     /// <summary>
     /// Gets or sets the material type

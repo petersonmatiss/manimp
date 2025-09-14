@@ -18,6 +18,7 @@ public class DirectoryDbContext : DbContext
     public DbSet<PlanFeature> PlanFeatures { get; set; }
     public DbSet<TenantSubscription> TenantSubscriptions { get; set; }
     public DbSet<TenantFeatureOverride> TenantFeatureOverrides { get; set; }
+    public DbSet<TenantProjectLimit> TenantProjectLimits { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -121,6 +122,27 @@ public class DirectoryDbContext : DbContext
                   .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => new { e.TenantId, e.FeatureId }).IsUnique();
             entity.HasIndex(e => e.ExpiresUtc);
+        });
+
+        // Configure TenantProjectLimit
+        modelBuilder.Entity<TenantProjectLimit>(entity =>
+        {
+            entity.HasKey(e => e.TenantProjectLimitId);
+            entity.Property(e => e.Month).HasMaxLength(7).IsRequired();
+            entity.Property(e => e.BaseLimit).HasDefaultValue(10);
+            entity.Property(e => e.AddonProjects).HasDefaultValue(0);
+
+            entity.HasOne(e => e.Tenant)
+                  .WithMany()
+                  .HasForeignKey(e => e.TenantId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Create a unique constraint for tenant + month combination
+            entity.HasIndex(e => new { e.TenantId, e.Month }).IsUnique();
+
+            // Indexes for performance
+            entity.HasIndex(e => e.TenantId);
+            entity.HasIndex(e => e.Month);
         });
     }
 }
