@@ -100,7 +100,7 @@ public class EN1090ProgressController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var success = await _progressService.AdvanceToNextStepAsync(assemblyId, userId, request.Notes);
-            
+
             if (!success)
             {
                 return BadRequest("Cannot advance to next step. Check that required quality checks are completed.");
@@ -125,7 +125,7 @@ public class EN1090ProgressController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var success = await _progressService.CompleteCurrentStepAsync(assemblyId, userId, request.Notes);
-            
+
             if (!success)
             {
                 return BadRequest("Failed to complete current step");
@@ -151,7 +151,7 @@ public class EN1090ProgressController : ControllerBase
             var userId = GetCurrentUserId();
             var success = await _progressService.SetCoatingOutsourcedAsync(
                 assemblyId, request.SupplierId, request.ExpectedReturnDate, userId);
-            
+
             if (!success)
             {
                 return BadRequest("Failed to set coating as outsourced. Ensure assembly is at ReadyForCoating step.");
@@ -176,7 +176,7 @@ public class EN1090ProgressController : ControllerBase
         {
             var userId = GetCurrentUserId();
             var success = await _progressService.RecordOutsourcedCoatingReturnAsync(assemblyId, userId, request.Notes);
-            
+
             if (!success)
             {
                 return BadRequest("Failed to record coating return");
@@ -256,7 +256,7 @@ public class EN1090ProgressController : ControllerBase
             var userId = GetCurrentUserId();
             var success = await _progressService.PerformQualityCheckAsync(
                 qualityCheckId, request.Status, userId, request.Results, request.DefectsFound, request.CorrectiveActions);
-            
+
             if (!success)
             {
                 return BadRequest("Failed to perform quality check");
@@ -298,9 +298,9 @@ public class EN1090ProgressController : ControllerBase
         try
         {
             var success = await _progressService.UpdateNonComplianceRecordAsync(
-                ncrId, request.Status, request.RootCause, request.ImmediateAction, 
+                ncrId, request.Status, request.RootCause, request.ImmediateAction,
                 request.PreventiveAction, request.AssignedTo, request.TargetResolutionDate);
-            
+
             if (!success)
             {
                 return NotFound($"Non-compliance record {ncrId} not found");
@@ -320,9 +320,9 @@ public class EN1090ProgressController : ControllerBase
     /// </summary>
     private string GetCurrentUserId()
     {
-        return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? 
-               User.FindFirst("sub")?.Value ?? 
-               User.Identity?.Name ?? 
+        return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+               User.FindFirst("sub")?.Value ??
+               User.Identity?.Name ??
                "Unknown";
     }
 

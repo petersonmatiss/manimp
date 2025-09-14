@@ -50,7 +50,7 @@ public class ProjectProgressReport
     /// <summary>
     /// Gets or sets the overall project progress percentage (0-100)
     /// </summary>
-    public decimal ProgressPercentage => TotalAssemblies > 0 ? 
+    public decimal ProgressPercentage => TotalAssemblies > 0 ?
         Math.Round((decimal)CompletedAssemblies / TotalAssemblies * 100, 1) : 0;
 
     /// <summary>
@@ -133,7 +133,7 @@ public class QualityCheckSummary
     /// <summary>
     /// Gets or sets the quality pass rate percentage
     /// </summary>
-    public decimal PassRate => TotalChecks > 0 ? 
+    public decimal PassRate => TotalChecks > 0 ?
         Math.Round((decimal)PassedChecks / TotalChecks * 100, 1) : 0;
 }
 
@@ -232,7 +232,7 @@ public class ProjectAssemblyDetails
     /// <summary>
     /// Gets or sets the number of days in current step
     /// </summary>
-    public int? DaysInCurrentStep => CurrentStepStarted.HasValue ? 
+    public int? DaysInCurrentStep => CurrentStepStarted.HasValue ?
         (int)(DateTime.UtcNow - CurrentStepStarted.Value).TotalDays : null;
 
     /// <summary>

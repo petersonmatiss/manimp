@@ -86,7 +86,7 @@ public class EN1090ProgressTrackingService
         var canAdvance = await CanAdvanceToStepAsync(assemblyId, nextStep.Value);
         if (!canAdvance)
         {
-            _logger.LogWarning("Cannot advance assembly {AssemblyId} to step {NextStep} - required quality checks not completed", 
+            _logger.LogWarning("Cannot advance assembly {AssemblyId} to step {NextStep} - required quality checks not completed",
                 assemblyId, nextStep);
             return false;
         }
@@ -125,7 +125,7 @@ public class EN1090ProgressTrackingService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Advanced assembly {AssemblyId} from {PreviousStep} to {CurrentStep} by user {UserId}", 
+        _logger.LogInformation("Advanced assembly {AssemblyId} from {PreviousStep} to {CurrentStep} by user {UserId}",
             assemblyId, progress.PreviousStep, progress.CurrentStep, userId);
 
         return true;
@@ -152,7 +152,7 @@ public class EN1090ProgressTrackingService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Completed current step {CurrentStep} for assembly {AssemblyId} by user {UserId}", 
+        _logger.LogInformation("Completed current step {CurrentStep} for assembly {AssemblyId} by user {UserId}",
             progress.CurrentStep, assemblyId, userId);
 
         return true;
@@ -196,7 +196,7 @@ public class EN1090ProgressTrackingService
         _context.AssemblyOutsourcings.Add(outsourcing);
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Set coating as outsourced for assembly {AssemblyId} to supplier {SupplierId}", 
+        _logger.LogInformation("Set coating as outsourced for assembly {AssemblyId} to supplier {SupplierId}",
             assemblyId, supplierId);
 
         return true;
@@ -245,7 +245,7 @@ public class EN1090ProgressTrackingService
     /// <summary>
     /// Creates required quality checks for a manufacturing step
     /// </summary>
-    private async Task CreateRequiredQualityChecksAsync(int assemblyProgressId, ManufacturingStep step)
+    private Task CreateRequiredQualityChecksAsync(int assemblyProgressId, ManufacturingStep step)
     {
         var requiredChecks = GetRequiredQualityChecks(step);
 
@@ -263,6 +263,8 @@ public class EN1090ProgressTrackingService
 
             _context.QualityChecks.Add(qualityCheck);
         }
+
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -272,33 +274,33 @@ public class EN1090ProgressTrackingService
     {
         return step switch
         {
-            ManufacturingStep.Assembled => new List<QualityCheckType> 
-            { 
-                QualityCheckType.VisualTesting, 
-                QualityCheckType.DimensionalCheck,
-                QualityCheckType.QualityAssurance 
-            },
-            ManufacturingStep.Welded => new List<QualityCheckType> 
-            { 
-                QualityCheckType.VisualTesting, 
-                QualityCheckType.WeldQualityCheck,
-                QualityCheckType.QualityAssurance 
-            },
-            ManufacturingStep.ReadyForCoating => new List<QualityCheckType> 
-            { 
+            ManufacturingStep.Assembled => new List<QualityCheckType>
+            {
                 QualityCheckType.VisualTesting,
-                QualityCheckType.QualityAssurance 
+                QualityCheckType.DimensionalCheck,
+                QualityCheckType.QualityAssurance
             },
-            ManufacturingStep.CoatingDone => new List<QualityCheckType> 
-            { 
-                QualityCheckType.VisualTesting, 
+            ManufacturingStep.Welded => new List<QualityCheckType>
+            {
+                QualityCheckType.VisualTesting,
+                QualityCheckType.WeldQualityCheck,
+                QualityCheckType.QualityAssurance
+            },
+            ManufacturingStep.ReadyForCoating => new List<QualityCheckType>
+            {
+                QualityCheckType.VisualTesting,
+                QualityCheckType.QualityAssurance
+            },
+            ManufacturingStep.CoatingDone => new List<QualityCheckType>
+            {
+                QualityCheckType.VisualTesting,
                 QualityCheckType.CoatingQualityCheck,
-                QualityCheckType.QualityAssurance 
+                QualityCheckType.QualityAssurance
             },
-            ManufacturingStep.ReadyForDelivery => new List<QualityCheckType> 
-            { 
+            ManufacturingStep.ReadyForDelivery => new List<QualityCheckType>
+            {
                 QualityCheckType.FinalInspection,
-                QualityCheckType.QualityAssurance 
+                QualityCheckType.QualityAssurance
             },
             _ => new List<QualityCheckType>()
         };
@@ -307,7 +309,7 @@ public class EN1090ProgressTrackingService
     /// <summary>
     /// Performs a quality check
     /// </summary>
-    public async Task<bool> PerformQualityCheckAsync(int qualityCheckId, QualityCheckStatus status, 
+    public async Task<bool> PerformQualityCheckAsync(int qualityCheckId, QualityCheckStatus status,
         string checkedBy, string? results = null, string? defectsFound = null, string? correctiveActions = null)
     {
         var qualityCheck = await _context.QualityChecks.FindAsync(qualityCheckId);
@@ -331,7 +333,7 @@ public class EN1090ProgressTrackingService
 
         await _context.SaveChangesAsync();
 
-        _logger.LogInformation("Quality check {QualityCheckId} completed with status {Status} by {CheckedBy}", 
+        _logger.LogInformation("Quality check {QualityCheckId} completed with status {Status} by {CheckedBy}",
             qualityCheckId, status, checkedBy);
 
         return true;
@@ -402,7 +404,7 @@ public class EN1090ProgressTrackingService
     /// <summary>
     /// Updates a non-compliance record
     /// </summary>
-    public async Task<bool> UpdateNonComplianceRecordAsync(int ncrId, NonComplianceStatus status, 
+    public async Task<bool> UpdateNonComplianceRecordAsync(int ncrId, NonComplianceStatus status,
         string? rootCause = null, string? immediateAction = null, string? preventiveAction = null,
         string? assignedTo = null, DateTime? targetResolutionDate = null)
     {
@@ -435,7 +437,7 @@ public class EN1090ProgressTrackingService
     {
         var year = DateTime.UtcNow.Year;
         var prefix = $"NCR-{year}-";
-        
+
         var lastNcr = await _context.NonComplianceRecords
             .Where(ncr => ncr.NCRNumber.StartsWith(prefix))
             .OrderByDescending(ncr => ncr.NCRNumber)
@@ -465,7 +467,7 @@ public class EN1090ProgressTrackingService
     {
         return await _context.AssemblyProgresses
             .Include(ap => ap.Assembly)
-            .Where(ap => ap.CurrentStep == ManufacturingStep.ReadyForCoating && 
+            .Where(ap => ap.CurrentStep == ManufacturingStep.ReadyForCoating &&
                         !ap.IsCoatingOutsourced)
             .ToListAsync();
     }
@@ -477,7 +479,7 @@ public class EN1090ProgressTrackingService
     {
         return await _context.AssemblyProgresses
             .Include(ap => ap.Assembly)
-            .Where(ap => ap.IsCoatingOutsourced && 
+            .Where(ap => ap.IsCoatingOutsourced &&
                         ap.OutsourcedCoatingActualReturnDate == null)
             .ToListAsync();
     }
@@ -545,7 +547,7 @@ public class EN1090ProgressTrackingService
             .Include(p => p.AssemblyLists)
                 .ThenInclude(al => al.Assemblies)
                     .ThenInclude(a => a.Progress)
-                        .ThenInclude(ap => ap.QualityChecks)
+                        .ThenInclude(ap => ap!.QualityChecks)
             .Include(p => p.AssemblyLists)
                 .ThenInclude(al => al.Assemblies)
                     .ThenInclude(a => a.NonComplianceRecords)
@@ -573,7 +575,7 @@ public class EN1090ProgressTrackingService
             .Include(p => p.AssemblyLists)
                 .ThenInclude(al => al.Assemblies)
                     .ThenInclude(a => a.Progress)
-                        .ThenInclude(ap => ap.QualityChecks)
+                        .ThenInclude(ap => ap!.QualityChecks)
             .Include(p => p.AssemblyLists)
                 .ThenInclude(al => al.Assemblies)
                     .ThenInclude(a => a.NonComplianceRecords)
@@ -622,19 +624,19 @@ public class EN1090ProgressTrackingService
     /// </summary>
     private ProjectProgressReport BuildProjectProgressReport(CrmProject project)
     {
-        var allAssemblies = project.AssemblyLists.SelectMany(al => al.Assemblies).ToList();
+        var allAssemblies = project.AssemblyLists?.SelectMany(al => al.Assemblies ?? Enumerable.Empty<Assembly>()).ToList() ?? new List<Assembly>();
         var assembliesWithProgress = allAssemblies.Where(a => a.Progress != null).ToList();
 
         var report = new ProjectProgressReport
         {
             ProjectId = project.CrmProjectId,
             ProjectName = project.Name,
-            CustomerName = project.Customer.CompanyName,
+            CustomerName = project.Customer?.CompanyName ?? "Unknown Customer",
             StartDate = project.StartDate,
             PlannedDeliveryDate = project.PlannedDeliveryDate,
             Status = project.Status,
             TotalAssemblies = allAssemblies.Count,
-            CompletedAssemblies = assembliesWithProgress.Count(a => 
+            CompletedAssemblies = assembliesWithProgress.Count(a =>
                 a.Progress!.CurrentStep == ManufacturingStep.Delivered)
         };
 
@@ -717,11 +719,11 @@ public class EN1090ProgressTrackingService
         return new NonComplianceSummary
         {
             TotalNCRs = allNCRs.Count,
-            OpenNCRs = allNCRs.Count(ncr => ncr.Status == NonComplianceStatus.Open || 
-                                           ncr.Status == NonComplianceStatus.UnderReview || 
+            OpenNCRs = allNCRs.Count(ncr => ncr.Status == NonComplianceStatus.Open ||
+                                           ncr.Status == NonComplianceStatus.UnderReview ||
                                            ncr.Status == NonComplianceStatus.CorrectiveActionInProgress ||
                                            ncr.Status == NonComplianceStatus.AwaitingVerification),
-            ClosedNCRs = allNCRs.Count(ncr => ncr.Status == NonComplianceStatus.Closed || 
+            ClosedNCRs = allNCRs.Count(ncr => ncr.Status == NonComplianceStatus.Closed ||
                                              ncr.Status == NonComplianceStatus.ClosedWithConcession),
             CriticalNCRs = allNCRs.Count(ncr => ncr.Severity == NonComplianceSeverity.Critical),
             MajorNCRs = allNCRs.Count(ncr => ncr.Severity == NonComplianceSeverity.Major),
@@ -749,7 +751,7 @@ public class EN1090ProgressTrackingService
 
         // Calculate average turnaround time for completed coating
         var completedCoatingJobs = outsourcedAssemblies
-            .Where(a => a.Progress!.OutsourcedCoatingSentDate.HasValue && 
+            .Where(a => a.Progress!.OutsourcedCoatingSentDate.HasValue &&
                        a.Progress.OutsourcedCoatingActualReturnDate.HasValue)
             .ToList();
 
@@ -757,7 +759,7 @@ public class EN1090ProgressTrackingService
         if (completedCoatingJobs.Any())
         {
             var totalDays = completedCoatingJobs
-                .Sum(a => (a.Progress!.OutsourcedCoatingActualReturnDate!.Value - 
+                .Sum(a => (a.Progress!.OutsourcedCoatingActualReturnDate!.Value -
                           a.Progress.OutsourcedCoatingSentDate!.Value).TotalDays);
             averageTurnaround = Math.Round((decimal)(totalDays / completedCoatingJobs.Count), 1);
         }
@@ -794,7 +796,7 @@ public class EN1090ProgressTrackingService
     /// </summary>
     private bool IsCoatingOverdue(AssemblyProgress? progress)
     {
-        if (progress?.IsCoatingOutsourced != true || 
+        if (progress?.IsCoatingOutsourced != true ||
             !progress.OutsourcedCoatingExpectedReturnDate.HasValue ||
             progress.OutsourcedCoatingActualReturnDate.HasValue)
         {

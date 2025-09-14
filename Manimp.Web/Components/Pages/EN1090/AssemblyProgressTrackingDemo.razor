@@ -138,9 +138,10 @@
 @code {
     private Dictionary<ManufacturingStep, int> stepCounts = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         LoadSampleStepCounts();
+        return Task.CompletedTask;
     }
 
     private void LoadSampleStepCounts()
