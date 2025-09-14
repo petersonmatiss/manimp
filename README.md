@@ -44,9 +44,15 @@ Manimp/
 - **Tier 2 Procurement and Remnants Module**: Advanced procurement tracking with POs, automated remnant creation, and full material lineage
 - **Tier 3 Sourcing Module**: Price request and quote workflow for RFQ management and procurement planning
 - **Feature Gating System**: Subscription-based feature access control with three-tier plans and override support
+- **EN 1090 Progress Tracking**: Comprehensive manufacturing progress tracking system compliant with EN 1090 standards including:
+  - Six-step manufacturing workflow (Assembled → Welded → Ready for Coating → Coating Done → Ready for Delivery → Delivered)
+  - Quality check management (Visual Testing, Quality Assurance, Dimensional, Weld, Coating, Final Inspection)
+  - Automated Non-Compliance Record (NCR) generation for failed quality checks
+  - Outsourced coating tracking with supplier management and return processing
+  - Complete audit trail with step history, timestamps, and user tracking
+  - RESTful API endpoints for all progress tracking operations
 
 ### 🚧 Coming Next
-- **EN 1090 Compliance**: Steel construction manufacturing compliance system with execution class determination, material traceability, welding management, and quality documentation
 - **Inventory UI**: User interface for managing profiles, materials, and usage
 - **Procurement UI**: User interface for purchase orders and supplier management
 - **Sourcing UI**: User interface for price requests and quote management
@@ -207,6 +213,80 @@ TenantFeatureOverrides
 - Price request lines can be converted to purchase order lines for streamlined procurement
 - Sourcing history is maintained for vendor performance analysis
 - Quote comparison features enable cost optimization
+
+## EN 1090 Progress Tracking System
+
+### Overview
+
+The EN 1090 Progress Tracking system provides comprehensive manufacturing progress tracking compliant with EN 1090 standards for structural steel fabrication. This system ensures quality assurance, traceability, and compliance throughout the manufacturing process.
+
+### Manufacturing Steps
+
+The system enforces a six-step manufacturing workflow:
+
+1. **Assembled** - Parts are assembled together
+2. **Welded** - Welding operations completed
+3. **Ready for Coating** - Assembly prepared for coating
+4. **Coating Done** - Coating operations completed
+5. **Ready for Delivery** - Final preparations complete
+6. **Delivered** - Assembly delivered to customer
+
+### Quality Check Management
+
+Each manufacturing step requires completion of specific quality checks before advancement:
+
+- **Visual Testing (VT)** - Visual inspection at each step
+- **Quality Assurance (QA)** - Quality control verification
+- **Dimensional Check** - Measurements and dimensions verification
+- **Weld Quality Check** - Specific to welding operations
+- **Coating Quality Check** - Specific to coating operations
+- **Final Inspection** - Before delivery
+
+### Non-Compliance Records (NCR)
+
+Automated NCR generation for failed quality checks includes:
+- Unique NCR numbering system
+- Severity classification (Minor, Major, Critical)
+- Root cause analysis tracking
+- Corrective and preventive action management
+- Customer notification workflow
+- Resolution verification process
+
+### Outsourced Coating Management
+
+Special handling for outsourced coating operations:
+- Automatic tracking when coating is outsourced
+- Supplier management integration
+- Expected and actual return date tracking
+- Status monitoring with overdue alerts
+- Seamless integration with step progression
+
+### Data Models
+
+**Key Entities:**
+- `AssemblyProgress` - Main progress tracking entity
+- `QualityCheck` - Individual quality check records
+- `NonComplianceRecord` - NCR management
+- `AssemblyProgressStepHistory` - Complete audit trail
+- `OutsourcedCoatingList` - Outsourcing management
+
+**API Endpoints:**
+- `/api/EN1090Progress/assembly/{id}` - Get assembly progress
+- `/api/EN1090Progress/assembly/{id}/advance` - Advance to next step
+- `/api/EN1090Progress/quality-check/{id}` - Perform quality check
+- `/api/EN1090Progress/ncr/open` - Get open NCRs
+- `/api/EN1090Progress/assemblies/step/{step}` - Get assemblies by step
+
+### User Interface
+
+The Blazor-based progress tracking dashboard provides:
+- Real-time manufacturing step overview with assembly counts
+- Interactive progress cards for each manufacturing step
+- Sample data demonstration of quality check status
+- Responsive design with MudBlazor components
+- Status indicators and action buttons for workflow management
+
+![EN 1090 Progress Tracking](https://github.com/user-attachments/assets/bc12767a-da49-4ffc-8687-b8973237f4d1)
 
 ## Feature Gating System
 

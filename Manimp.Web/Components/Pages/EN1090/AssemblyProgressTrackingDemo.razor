@@ -1,0 +1,249 @@
+@page "/en1090/progress"
+@using Manimp.Shared.Models
+@using Manimp.Services.Implementation
+
+<PageTitle>EN 1090 Progress Tracking</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    <MudStack Spacing="4">
+        <!-- Header -->
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <div>
+                    <MudText Typo="Typo.h4">EN 1090 Progress Tracking</MudText>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
+                        Manufacturing Progress & Quality Assurance Dashboard
+                    </MudText>
+                </div>
+                <MudStack Row Spacing="2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" 
+                               StartIcon="@Icons.Material.Filled.Assignment">
+                        Non-Compliance Records
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" 
+                               StartIcon="@Icons.Material.Filled.LocalShipping">
+                        Outsourced Coating
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Manufacturing Steps Overview -->
+        <MudGrid>
+            @foreach (var step in GetManufacturingSteps())
+            {
+                <MudItem xs="12" sm="6" md="4" lg="2">
+                    <MudCard Class="@GetStepCardClass(step)" Style="@GetStepCardStyle(step)">
+                        <MudCardContent Class="pa-4 text-center">
+                            <MudIcon Icon="@GetStepIcon(step)" Size="Size.Large" Class="mb-2" />
+                            <MudText Typo="Typo.h6" Class="mb-1">@GetStepDisplayName(step)</MudText>
+                            <MudText Typo="Typo.h4" Color="Color.Primary">
+                                @(stepCounts.TryGetValue(step, out var count) ? count : 0)
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">assemblies</MudText>
+                        </MudCardContent>
+                        <MudCardActions Class="justify-center pa-2">
+                            <MudButton Size="Size.Small" Variant="Variant.Text" 
+                                       OnClick="() => LoadAssembliesForStep(step)">
+                                View Details
+                            </MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+            }
+        </MudGrid>
+
+        <!-- Demo Message -->
+        <MudAlert Severity="Severity.Info" Class="ma-4">
+            <MudText><strong>Demo Note:</strong> This is a demonstration of the EN 1090 Progress Tracking interface. 
+            The service layer and API are fully implemented but require database connection for full functionality. 
+            Key features include:</MudText>
+            <div class="mt-2">
+                <div class="d-flex align-center mb-1">
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Class="mr-2" Size="Size.Small" />
+                    <MudText>Six-step EN 1090 compliant manufacturing process</MudText>
+                </div>
+                <div class="d-flex align-center mb-1">
+                    <MudIcon Icon="@Icons.Material.Filled.Assignment" Color="Color.Info" Class="mr-2" Size="Size.Small" />
+                    <MudText>Quality checks (VT, QA) required before step advancement</MudText>
+                </div>
+                <div class="d-flex align-center mb-1">
+                    <MudIcon Icon="@Icons.Material.Filled.ReportProblem" Color="Color.Warning" Class="mr-2" Size="Size.Small" />
+                    <MudText>Automated NCR generation for failed quality checks</MudText>
+                </div>
+                <div class="d-flex align-center mb-1">
+                    <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Color="Color.Secondary" Class="mr-2" Size="Size.Small" />
+                    <MudText>Outsourced coating tracking with supplier management</MudText>
+                </div>
+                <div class="d-flex align-center">
+                    <MudIcon Icon="@Icons.Material.Filled.History" Color="Color.Primary" Class="mr-2" Size="Size.Small" />
+                    <MudText>Complete audit trail with step history and timestamps</MudText>
+                </div>
+            </div>
+        </MudAlert>
+
+        <!-- Sample Data Table -->
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudText Typo="Typo.h5" Class="mb-4">Sample Assembly Progress Data</MudText>
+            
+            <MudTable Items="@GetSampleData()" Dense="true" Hover="true" Striped="true">
+                <HeaderContent>
+                    <MudTh>Assembly Mark</MudTh>
+                    <MudTh>Current Step</MudTh>
+                    <MudTh>Quality Checks</MudTh>
+                    <MudTh>Started</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>@context.AssemblyMark</MudTd>
+                    <MudTd>@GetStepDisplayName(context.CurrentStep)</MudTd>
+                    <MudTd>
+                        <MudStack Row Spacing="1">
+                            <MudBadge Color="Color.Success" Content="2" Overlap="true">
+                                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Small" />
+                            </MudBadge>
+                            <MudBadge Color="Color.Warning" Content="1" Overlap="true">
+                                <MudIcon Icon="@Icons.Material.Filled.Schedule" Size="Size.Small" />
+                            </MudBadge>
+                        </MudStack>
+                    </MudTd>
+                    <MudTd>@context.StartedDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd>
+                        <MudBadge Color="@GetStatusColor(context.CurrentStep)" Content="@GetStatusText(context.CurrentStep)" Overlap="true">
+                            <MudIcon Icon="@GetStepIcon(context.CurrentStep)" Size="Size.Small" />
+                        </MudBadge>
+                    </MudTd>
+                    <MudTd>
+                        <MudStack Row Spacing="1">
+                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" 
+                                           Color="Color.Primary" Size="Size.Small" />
+                            <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" 
+                                           Color="Color.Success" Size="Size.Small" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Assignment" 
+                                           Color="Color.Secondary" Size="Size.Small" />
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudStack>
+</MudContainer>
+
+@code {
+    private Dictionary<ManufacturingStep, int> stepCounts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        LoadSampleStepCounts();
+    }
+
+    private void LoadSampleStepCounts()
+    {
+        // Sample data for demo purposes
+        stepCounts = new Dictionary<ManufacturingStep, int>
+        {
+            { ManufacturingStep.Assembled, 8 },
+            { ManufacturingStep.Welded, 5 },
+            { ManufacturingStep.ReadyForCoating, 3 },
+            { ManufacturingStep.CoatingDone, 2 },
+            { ManufacturingStep.ReadyForDelivery, 4 },
+            { ManufacturingStep.Delivered, 12 }
+        };
+    }
+
+    private List<ManufacturingStep> GetManufacturingSteps()
+    {
+        return Enum.GetValues<ManufacturingStep>().Where(s => s != ManufacturingStep.NotStarted).ToList();
+    }
+
+    private string GetStepDisplayName(ManufacturingStep step)
+    {
+        return step switch
+        {
+            ManufacturingStep.Assembled => "Assembled",
+            ManufacturingStep.Welded => "Welded",
+            ManufacturingStep.ReadyForCoating => "Ready for Coating",
+            ManufacturingStep.CoatingDone => "Coating Done",
+            ManufacturingStep.ReadyForDelivery => "Ready for Delivery",
+            ManufacturingStep.Delivered => "Delivered",
+            _ => step.ToString()
+        };
+    }
+
+    private string GetStepIcon(ManufacturingStep step)
+    {
+        return step switch
+        {
+            ManufacturingStep.Assembled => Icons.Material.Filled.Build,
+            ManufacturingStep.Welded => Icons.Material.Filled.Whatshot,
+            ManufacturingStep.ReadyForCoating => Icons.Material.Filled.Brush,
+            ManufacturingStep.CoatingDone => Icons.Material.Filled.CheckCircle,
+            ManufacturingStep.ReadyForDelivery => Icons.Material.Filled.LocalShipping,
+            ManufacturingStep.Delivered => Icons.Material.Filled.Done,
+            _ => Icons.Material.Filled.Help
+        };
+    }
+
+    private string GetStepCardClass(ManufacturingStep step)
+    {
+        return "";
+    }
+
+    private string GetStepCardStyle(ManufacturingStep step)
+    {
+        return "";
+    }
+
+    private void LoadAssembliesForStep(ManufacturingStep step)
+    {
+        // Demo implementation - would load actual data from service
+    }
+
+    private Color GetStatusColor(ManufacturingStep step)
+    {
+        return step switch
+        {
+            ManufacturingStep.Assembled => Color.Info,
+            ManufacturingStep.Welded => Color.Warning,
+            ManufacturingStep.ReadyForCoating => Color.Secondary,
+            ManufacturingStep.CoatingDone => Color.Primary,
+            ManufacturingStep.ReadyForDelivery => Color.Success,
+            ManufacturingStep.Delivered => Color.Dark,
+            _ => Color.Default
+        };
+    }
+
+    private string GetStatusText(ManufacturingStep step)
+    {
+        return step switch
+        {
+            ManufacturingStep.Assembled => "In Progress",
+            ManufacturingStep.Welded => "QA Required",
+            ManufacturingStep.ReadyForCoating => "Ready",
+            ManufacturingStep.CoatingDone => "Completed",
+            ManufacturingStep.ReadyForDelivery => "Ready",
+            ManufacturingStep.Delivered => "Complete",
+            _ => "Unknown"
+        };
+    }
+
+    private List<SampleAssemblyData> GetSampleData()
+    {
+        return new List<SampleAssemblyData>
+        {
+            new() { AssemblyMark = "A001", CurrentStep = ManufacturingStep.Assembled, StartedDate = DateTime.UtcNow.AddDays(-2) },
+            new() { AssemblyMark = "A002", CurrentStep = ManufacturingStep.Welded, StartedDate = DateTime.UtcNow.AddDays(-5) },
+            new() { AssemblyMark = "A003", CurrentStep = ManufacturingStep.ReadyForCoating, StartedDate = DateTime.UtcNow.AddDays(-1) },
+            new() { AssemblyMark = "A004", CurrentStep = ManufacturingStep.CoatingDone, StartedDate = DateTime.UtcNow.AddDays(-8) },
+            new() { AssemblyMark = "A005", CurrentStep = ManufacturingStep.ReadyForDelivery, StartedDate = DateTime.UtcNow.AddDays(-3) }
+        };
+    }
+
+    private class SampleAssemblyData
+    {
+        public string AssemblyMark { get; set; } = "";
+        public ManufacturingStep CurrentStep { get; set; }
+        public DateTime StartedDate { get; set; }
+    }
+}

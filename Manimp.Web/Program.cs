@@ -31,6 +31,7 @@ builder.Services.AddMudServices();
 // Register services (commented out for demo - requires database)
 // builder.Services.AddScoped<ITenantService, TenantService>();
 // builder.Services.AddScoped<ITenantDbContext, TenantDbContextService>();
+// builder.Services.AddScoped<EN1090ProgressTrackingService>();
 
 // Add health checks for container deployment (commented out for demo)
 // builder.Services.AddHealthChecks()
