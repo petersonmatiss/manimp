@@ -325,6 +325,65 @@ public class EN1090ProgressController : ControllerBase
                User.Identity?.Name ?? 
                "Unknown";
     }
+
+    /// <summary>
+    /// Gets progress reports for all projects
+    /// </summary>
+    [HttpGet("projects")]
+    public async Task<ActionResult<List<ProjectProgressReport>>> GetAllProjectProgressReports()
+    {
+        try
+        {
+            var reports = await _progressService.GetAllProjectProgressReportsAsync();
+            return Ok(reports);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting project progress reports");
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    /// <summary>
+    /// Gets progress report for a specific project
+    /// </summary>
+    [HttpGet("project/{projectId}")]
+    public async Task<ActionResult<ProjectProgressReport>> GetProjectProgressReport(int projectId)
+    {
+        try
+        {
+            var report = await _progressService.GetProjectProgressReportAsync(projectId);
+            if (report == null)
+            {
+                return NotFound($"No project found with ID {projectId}");
+            }
+
+            return Ok(report);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting progress report for project {ProjectId}", projectId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
+
+    /// <summary>
+    /// Gets detailed assembly information for a project
+    /// </summary>
+    [HttpGet("project/{projectId}/assemblies")]
+    public async Task<ActionResult<List<ProjectAssemblyDetails>>> GetProjectAssemblyDetails(int projectId)
+    {
+        try
+        {
+            var details = await _progressService.GetProjectAssemblyDetailsAsync(projectId);
+            return Ok(details);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting assembly details for project {ProjectId}", projectId);
+            return StatusCode(500, "Internal server error");
+        }
+    }
 }
 
 /// <summary>

@@ -532,4 +532,320 @@ public class EN1090ProgressTrackingService
     }
 
     #endregion
+
+    #region Project Progress Reporting
+
+    /// <summary>
+    /// Gets progress reports for all projects
+    /// </summary>
+    public async Task<List<ProjectProgressReport>> GetAllProjectProgressReportsAsync()
+    {
+        var projects = await _context.CrmProjects
+            .Include(p => p.Customer)
+            .Include(p => p.AssemblyLists)
+                .ThenInclude(al => al.Assemblies)
+                    .ThenInclude(a => a.Progress)
+                        .ThenInclude(ap => ap.QualityChecks)
+            .Include(p => p.AssemblyLists)
+                .ThenInclude(al => al.Assemblies)
+                    .ThenInclude(a => a.NonComplianceRecords)
+            .Where(p => p.IsActive)
+            .ToListAsync();
+
+        var reports = new List<ProjectProgressReport>();
+
+        foreach (var project in projects)
+        {
+            var report = BuildProjectProgressReport(project);
+            reports.Add(report);
+        }
+
+        return reports.OrderBy(r => r.ProjectName).ToList();
+    }
+
+    /// <summary>
+    /// Gets progress report for a specific project
+    /// </summary>
+    public async Task<ProjectProgressReport?> GetProjectProgressReportAsync(int projectId)
+    {
+        var project = await _context.CrmProjects
+            .Include(p => p.Customer)
+            .Include(p => p.AssemblyLists)
+                .ThenInclude(al => al.Assemblies)
+                    .ThenInclude(a => a.Progress)
+                        .ThenInclude(ap => ap.QualityChecks)
+            .Include(p => p.AssemblyLists)
+                .ThenInclude(al => al.Assemblies)
+                    .ThenInclude(a => a.NonComplianceRecords)
+            .FirstOrDefaultAsync(p => p.CrmProjectId == projectId);
+
+        if (project == null) return null;
+
+        return BuildProjectProgressReport(project);
+    }
+
+    /// <summary>
+    /// Gets detailed assembly information for a project
+    /// </summary>
+    public async Task<List<ProjectAssemblyDetails>> GetProjectAssemblyDetailsAsync(int projectId)
+    {
+        var assemblies = await _context.Assemblies
+            .Include(a => a.Progress)
+            .Include(a => a.NonComplianceRecords.Where(ncr => ncr.Status == NonComplianceStatus.Open))
+            .Where(a => a.AssemblyList.CrmProjectId == projectId)
+            .ToListAsync();
+
+        var details = new List<ProjectAssemblyDetails>();
+
+        foreach (var assembly in assemblies)
+        {
+            var detail = new ProjectAssemblyDetails
+            {
+                AssemblyId = assembly.AssemblyId,
+                AssemblyMark = assembly.AssemblyMark,
+                CurrentStep = assembly.Progress?.CurrentStep ?? ManufacturingStep.NotStarted,
+                CurrentStepStarted = assembly.Progress?.CurrentStepStarted,
+                HasOpenNCRs = assembly.NonComplianceRecords.Any(),
+                IsCoatingOutsourced = assembly.Progress?.IsCoatingOutsourced ?? false,
+                IsCoatingOverdue = IsCoatingOverdue(assembly.Progress),
+                QualityStatus = GetQualityStatus(assembly.Progress)
+            };
+
+            details.Add(detail);
+        }
+
+        return details.OrderBy(d => d.AssemblyMark).ToList();
+    }
+
+    /// <summary>
+    /// Builds a comprehensive progress report for a project
+    /// </summary>
+    private ProjectProgressReport BuildProjectProgressReport(CrmProject project)
+    {
+        var allAssemblies = project.AssemblyLists.SelectMany(al => al.Assemblies).ToList();
+        var assembliesWithProgress = allAssemblies.Where(a => a.Progress != null).ToList();
+
+        var report = new ProjectProgressReport
+        {
+            ProjectId = project.CrmProjectId,
+            ProjectName = project.Name,
+            CustomerName = project.Customer.CompanyName,
+            StartDate = project.StartDate,
+            PlannedDeliveryDate = project.PlannedDeliveryDate,
+            Status = project.Status,
+            TotalAssemblies = allAssemblies.Count,
+            CompletedAssemblies = assembliesWithProgress.Count(a => 
+                a.Progress!.CurrentStep == ManufacturingStep.Delivered)
+        };
+
+        // Build step progress summary
+        report.StepProgress = BuildStepProgressSummary(assembliesWithProgress, report.TotalAssemblies);
+
+        // Build quality summary
+        report.QualitySummary = BuildQualitySummary(assembliesWithProgress);
+
+        // Build non-compliance summary
+        report.NonComplianceSummary = BuildNonComplianceSummary(allAssemblies);
+
+        // Build outsourced coating summary
+        report.CoatingSummary = BuildOutsourcedCoatingSummary(assembliesWithProgress);
+
+        return report;
+    }
+
+    /// <summary>
+    /// Builds step progress summary for a project
+    /// </summary>
+    private List<StepProgressSummary> BuildStepProgressSummary(List<Assembly> assembliesWithProgress, int totalAssemblies)
+    {
+        var stepCounts = assembliesWithProgress
+            .Where(a => a.Progress != null)
+            .GroupBy(a => a.Progress!.CurrentStep)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        var stepProgress = new List<StepProgressSummary>();
+
+        foreach (ManufacturingStep step in Enum.GetValues<ManufacturingStep>())
+        {
+            if (step == ManufacturingStep.NotStarted) continue;
+
+            var count = stepCounts.GetValueOrDefault(step, 0);
+            var percentage = totalAssemblies > 0 ? Math.Round((decimal)count / totalAssemblies * 100, 1) : 0;
+
+            // Calculate average time in step
+            var averageTime = CalculateAverageTimeInStep(assembliesWithProgress, step);
+
+            stepProgress.Add(new StepProgressSummary
+            {
+                Step = step,
+                StepName = GetStepDisplayName(step),
+                AssemblyCount = count,
+                Percentage = percentage,
+                AverageTimeInStep = averageTime
+            });
+        }
+
+        return stepProgress;
+    }
+
+    /// <summary>
+    /// Builds quality check summary for a project
+    /// </summary>
+    private QualityCheckSummary BuildQualitySummary(List<Assembly> assembliesWithProgress)
+    {
+        var allQualityChecks = assembliesWithProgress
+            .Where(a => a.Progress != null)
+            .SelectMany(a => a.Progress!.QualityChecks)
+            .ToList();
+
+        return new QualityCheckSummary
+        {
+            TotalChecks = allQualityChecks.Count,
+            PassedChecks = allQualityChecks.Count(qc => qc.Status == QualityCheckStatus.Passed),
+            FailedChecks = allQualityChecks.Count(qc => qc.Status == QualityCheckStatus.Failed),
+            PendingChecks = allQualityChecks.Count(qc => qc.Status == QualityCheckStatus.Pending)
+        };
+    }
+
+    /// <summary>
+    /// Builds non-compliance summary for a project
+    /// </summary>
+    private NonComplianceSummary BuildNonComplianceSummary(List<Assembly> allAssemblies)
+    {
+        var allNCRs = allAssemblies.SelectMany(a => a.NonComplianceRecords).ToList();
+
+        return new NonComplianceSummary
+        {
+            TotalNCRs = allNCRs.Count,
+            OpenNCRs = allNCRs.Count(ncr => ncr.Status == NonComplianceStatus.Open || 
+                                           ncr.Status == NonComplianceStatus.UnderReview || 
+                                           ncr.Status == NonComplianceStatus.CorrectiveActionInProgress ||
+                                           ncr.Status == NonComplianceStatus.AwaitingVerification),
+            ClosedNCRs = allNCRs.Count(ncr => ncr.Status == NonComplianceStatus.Closed || 
+                                             ncr.Status == NonComplianceStatus.ClosedWithConcession),
+            CriticalNCRs = allNCRs.Count(ncr => ncr.Severity == NonComplianceSeverity.Critical),
+            MajorNCRs = allNCRs.Count(ncr => ncr.Severity == NonComplianceSeverity.Major),
+            MinorNCRs = allNCRs.Count(ncr => ncr.Severity == NonComplianceSeverity.Minor)
+        };
+    }
+
+    /// <summary>
+    /// Builds outsourced coating summary for a project
+    /// </summary>
+    private OutsourcedCoatingSummary BuildOutsourcedCoatingSummary(List<Assembly> assembliesWithProgress)
+    {
+        var outsourcedAssemblies = assembliesWithProgress
+            .Where(a => a.Progress?.IsCoatingOutsourced == true)
+            .ToList();
+
+        var sentForCoating = outsourcedAssemblies
+            .Count(a => a.Progress!.OutsourcedCoatingSentDate.HasValue);
+
+        var returnedFromCoating = outsourcedAssemblies
+            .Count(a => a.Progress!.OutsourcedCoatingActualReturnDate.HasValue);
+
+        var overdueAssemblies = outsourcedAssemblies
+            .Count(a => IsCoatingOverdue(a.Progress));
+
+        // Calculate average turnaround time for completed coating
+        var completedCoatingJobs = outsourcedAssemblies
+            .Where(a => a.Progress!.OutsourcedCoatingSentDate.HasValue && 
+                       a.Progress.OutsourcedCoatingActualReturnDate.HasValue)
+            .ToList();
+
+        decimal? averageTurnaround = null;
+        if (completedCoatingJobs.Any())
+        {
+            var totalDays = completedCoatingJobs
+                .Sum(a => (a.Progress!.OutsourcedCoatingActualReturnDate!.Value - 
+                          a.Progress.OutsourcedCoatingSentDate!.Value).TotalDays);
+            averageTurnaround = Math.Round((decimal)(totalDays / completedCoatingJobs.Count), 1);
+        }
+
+        return new OutsourcedCoatingSummary
+        {
+            TotalOutsourced = outsourcedAssemblies.Count,
+            SentForCoating = sentForCoating,
+            ReturnedFromCoating = returnedFromCoating,
+            OverdueAssemblies = overdueAssemblies,
+            AverageTurnaroundDays = averageTurnaround
+        };
+    }
+
+    /// <summary>
+    /// Calculates average time in step for assemblies
+    /// </summary>
+    private decimal? CalculateAverageTimeInStep(List<Assembly> assembliesWithProgress, ManufacturingStep step)
+    {
+        var assembliesInStep = assembliesWithProgress
+            .Where(a => a.Progress?.CurrentStep == step && a.Progress.CurrentStepStarted.HasValue)
+            .ToList();
+
+        if (!assembliesInStep.Any()) return null;
+
+        var totalDays = assembliesInStep
+            .Sum(a => (DateTime.UtcNow - a.Progress!.CurrentStepStarted!.Value).TotalDays);
+
+        return Math.Round((decimal)(totalDays / assembliesInStep.Count), 1);
+    }
+
+    /// <summary>
+    /// Checks if coating is overdue for an assembly
+    /// </summary>
+    private bool IsCoatingOverdue(AssemblyProgress? progress)
+    {
+        if (progress?.IsCoatingOutsourced != true || 
+            !progress.OutsourcedCoatingExpectedReturnDate.HasValue ||
+            progress.OutsourcedCoatingActualReturnDate.HasValue)
+        {
+            return false;
+        }
+
+        return DateTime.UtcNow > progress.OutsourcedCoatingExpectedReturnDate.Value;
+    }
+
+    /// <summary>
+    /// Gets quality status description for an assembly
+    /// </summary>
+    private string GetQualityStatus(AssemblyProgress? progress)
+    {
+        if (progress?.QualityChecks == null || !progress.QualityChecks.Any())
+        {
+            return "No checks";
+        }
+
+        var relevantChecks = progress.QualityChecks
+            .Where(qc => qc.ForStep == progress.CurrentStep)
+            .ToList();
+
+        if (!relevantChecks.Any()) return "No checks for step";
+
+        var failedChecks = relevantChecks.Count(qc => qc.Status == QualityCheckStatus.Failed);
+        var pendingChecks = relevantChecks.Count(qc => qc.Status == QualityCheckStatus.Pending);
+        var passedChecks = relevantChecks.Count(qc => qc.Status == QualityCheckStatus.Passed);
+
+        if (failedChecks > 0) return $"{failedChecks} failed";
+        if (pendingChecks > 0) return $"{pendingChecks} pending";
+        return "All passed";
+    }
+
+    /// <summary>
+    /// Gets display name for manufacturing step
+    /// </summary>
+    private string GetStepDisplayName(ManufacturingStep step)
+    {
+        return step switch
+        {
+            ManufacturingStep.NotStarted => "Not Started",
+            ManufacturingStep.Assembled => "Assembled",
+            ManufacturingStep.Welded => "Welded",
+            ManufacturingStep.ReadyForCoating => "Ready for Coating",
+            ManufacturingStep.CoatingDone => "Coating Done",
+            ManufacturingStep.ReadyForDelivery => "Ready for Delivery",
+            ManufacturingStep.Delivered => "Delivered",
+            _ => step.ToString()
+        };
+    }
+
+    #endregion
 }

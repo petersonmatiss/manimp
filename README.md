@@ -218,6 +218,112 @@ TenantFeatureOverrides
 
 ### Overview
 
+The EN 1090 Progress Tracking System is a **comprehensive manufacturing management solution** designed to ensure compliance with EN 1090 standards for structural steelwork. This system provides complete traceability, quality assurance, and progress monitoring throughout the manufacturing process.
+
+### Manufacturing Workflow
+
+The system implements a **six-step EN 1090 compliant manufacturing process**:
+
+1. **Assembled** - Parts are assembled together
+2. **Welded** - Welding operations completed  
+3. **Ready for Coating** - Assembly prepared for coating
+4. **Coating Done** - Coating operations completed
+5. **Ready for Delivery** - Final preparations complete
+6. **Delivered** - Assembly delivered to customer
+
+Each step requires completion of mandatory quality checks before advancement, ensuring full compliance with EN 1090 standards.
+
+### Quality Management System
+
+**Quality Check Types:**
+- Visual Testing (VT)
+- Quality Assurance (QA)  
+- Dimensional Check
+- Weld Quality Check
+- Coating Quality Check
+- Final Inspection
+
+**Features:**
+- **Automated validation** prevents step advancement until all required quality checks pass
+- **Results tracking** with detailed documentation of defects and corrective actions
+- **Quality metrics** and pass rate monitoring
+- **EN 1090 compliance** verification at each manufacturing step
+
+### Non-Compliance Records (NCR)
+
+**Comprehensive NCR Management:**
+- **Automatic NCR generation** for failed quality checks
+- **Severity classification**: Minor, Major, Critical
+- **Complete workflow**: Root cause analysis, corrective/preventive actions, customer notification
+- **Unique numbering system** with year-based sequence (NCR-2024-0001)
+- **Status tracking**: Open → Under Review → Corrective Action → Closed
+
+### Outsourced Coating Management
+
+**Special handling** for assemblies requiring external coating:
+- **Supplier tracking** with expected and actual return dates
+- **Status monitoring** with overdue alerts
+- **Seamless integration** with manufacturing workflow
+- **Turnaround time analysis** for supplier performance
+
+### Project Reporting System
+
+**NEW FEATURE - Report by Project:**
+- **Project-based progress reports** showing manufacturing status across all assemblies
+- **Quality metrics** including pass rates and NCR summaries  
+- **Manufacturing step breakdown** with assembly counts and progress percentages
+- **Outsourced coating status** tracking and overdue alerts
+- **Overall project progress** with completion percentages
+- **Customer and timeline tracking** with start dates and delivery targets
+
+### Technical Implementation
+
+**Data Models:**
+- `AssemblyProgress` - Main progress tracking entity
+- `QualityCheck` - Individual quality check records with EN 1090 compliance
+- `NonComplianceRecord` - Full NCR workflow management
+- `AssemblyProgressStepHistory` - Complete audit trail
+- `OutsourcedCoatingList` - External coating operations tracking
+- `ProjectProgressReport` - Comprehensive project reporting DTOs
+
+**Service Layer:**
+The `EN1090ProgressTrackingService` provides comprehensive business logic including:
+- Step advancement validation with quality check verification
+- Automatic quality check creation based on manufacturing requirements
+- NCR generation and workflow management
+- Complete audit trail with user tracking and timestamps
+- **Project reporting with manufacturing analytics**
+
+**API Endpoints:**
+RESTful API with endpoints for:
+- `/api/EN1090Progress/assembly/{id}` - Progress retrieval and reporting
+- `/api/EN1090Progress/assembly/{id}/advance` - Step advancement
+- `/api/EN1090Progress/quality-check/{id}` - Quality check operations
+- `/api/EN1090Progress/ncr/open` - NCR management
+- **`/api/EN1090Progress/projects`** - All project progress reports
+- **`/api/EN1090Progress/project/{id}`** - Specific project progress report
+- **`/api/EN1090Progress/project/{id}/assemblies`** - Project assembly details
+
+**User Interface:**
+Modern Blazor interface with MudBlazor components featuring:
+- Real-time manufacturing step overview with assembly counts
+- Interactive progress cards for each manufacturing step
+- Quality check status indicators and management
+- **Project reports dashboard** with progress metrics and quality analytics
+- Responsive design optimized for shop floor use
+
+### Database Changes
+
+- Added 5 new entities with proper Entity Framework configuration
+- Implemented relationships and indexes for optimal performance
+- Applied migrations for database schema updates
+- Maintains existing Assembly model compatibility
+- **Added project reporting DTOs** for comprehensive analytics
+
+### Status: **Available Now**
+
+The EN 1090 Progress Tracking System with project reporting is **production-ready** and provides a complete foundation for EN 1090 compliant manufacturing operations with full traceability, quality management, and compliance reporting capabilities.
+
 The EN 1090 Progress Tracking system provides comprehensive manufacturing progress tracking compliant with EN 1090 standards for structural steel fabrication. This system ensures quality assurance, traceability, and compliance throughout the manufacturing process.
 
 ### Manufacturing Steps

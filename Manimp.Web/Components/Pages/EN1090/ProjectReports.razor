@@ -1,0 +1,190 @@
+@page "/en1090/project-reports"
+@using Manimp.Shared.Models
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+
+<PageTitle>EN 1090 Project Reports</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-6">
+    <MudStack Spacing="4">
+        <!-- Header -->
+        <MudPaper Class="pa-4" Elevation="2">
+            <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <div>
+                    <MudText Typo="Typo.h4">EN 1090 Project Reports</MudText>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">
+                        Manufacturing Progress Reports by Project
+                    </MudText>
+                </div>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.Refresh"
+                           OnClick="LoadProjectReports"
+                           Disabled="@isLoading">
+                    Refresh
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+
+        <!-- Loading State -->
+        @if (isLoading)
+        {
+            <MudPaper Class="pa-8" Elevation="1">
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+                    <MudText Typo="Typo.h6">Loading project reports...</MudText>
+                </MudStack>
+            </MudPaper>
+        }
+
+        <!-- Project Reports Grid -->
+        @if (!isLoading && projectReports != null && projectReports.Any())
+        {
+            <MudGrid>
+                @foreach (var project in projectReports)
+                {
+                    <MudItem xs="12" lg="6">
+                        <MudCard Class="mud-height-full">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                        <div>
+                                            <MudText Typo="Typo.h6">@project.ProjectName</MudText>
+                                            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                @project.CustomerName
+                                            </MudText>
+                                        </div>
+                                        <MudChip T="string" Color="@GetStatusColor(project.Status)" Size="Size.Small">
+                                            @project.Status
+                                        </MudChip>
+                                    </MudStack>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudStack Spacing="3">
+                                    <!-- Progress Overview -->
+                                    <div>
+                                        <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+                                            <MudText Typo="Typo.subtitle2">Overall Progress</MudText>
+                                            <MudText Typo="Typo.subtitle2" Color="Color.Primary">
+                                                @project.ProgressPercentage%
+                                            </MudText>
+                                        </MudStack>
+                                        <MudProgressLinear Color="Color.Primary" 
+                                                         Value="@((double)project.ProgressPercentage)" 
+                                                         Class="mb-2" />
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                            @project.CompletedAssemblies of @project.TotalAssemblies assemblies completed
+                                        </MudText>
+                                    </div>
+
+                                    <!-- Quality & NCR Summary -->
+                                    <MudGrid>
+                                        <MudItem xs="6">
+                                            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                                <MudText Typo="Typo.h6" Color="@GetQualityColor(project.QualitySummary.PassRate)">
+                                                    @project.QualitySummary.PassRate%
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Align="Align.Center">Quality Pass Rate</MudText>
+                                            </MudStack>
+                                        </MudItem>
+                                        <MudItem xs="6">
+                                            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                                                <MudText Typo="Typo.h6" Color="@GetNCRColor(project.NonComplianceSummary.OpenNCRs)">
+                                                    @project.NonComplianceSummary.OpenNCRs
+                                                </MudText>
+                                                <MudText Typo="Typo.caption" Align="Align.Center">Open NCRs</MudText>
+                                            </MudStack>
+                                        </MudItem>
+                                    </MudGrid>
+                                </MudStack>
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudButton Variant="Variant.Text" Color="Color.Primary">
+                                    View Details
+                                </MudButton>
+                                <MudButton Variant="Variant.Text" Color="Color.Secondary">
+                                    View Assemblies
+                                </MudButton>
+                            </MudCardActions>
+                        </MudCard>
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+
+        <!-- Empty State -->
+        @if (!isLoading && (projectReports == null || !projectReports.Any()))
+        {
+            <MudPaper Class="pa-8" Elevation="1">
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Large" Color="Color.Secondary" />
+                    <MudText Typo="Typo.h6" Color="Color.Secondary">No Project Reports Available</MudText>
+                    <MudText Typo="Typo.body1" Color="Color.Secondary" Align="Align.Center">
+                        There are no projects with assemblies to display progress reports for.
+                    </MudText>
+                </MudStack>
+            </MudPaper>
+        }
+    </MudStack>
+</MudContainer>
+
+@code {
+    private List<ProjectProgressReport>? projectReports;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProjectReports();
+    }
+
+    private async Task LoadProjectReports()
+    {
+        try
+        {
+            isLoading = true;
+            projectReports = await Http.GetFromJsonAsync<List<ProjectProgressReport>>("api/EN1090Progress/projects");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading project reports: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status.ToLower() switch
+        {
+            "completed" => Color.Success,
+            "in progress" => Color.Primary,
+            "planning" => Color.Info,
+            "on hold" => Color.Warning,
+            "cancelled" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetQualityColor(decimal passRate)
+    {
+        return passRate switch
+        {
+            >= 95 => Color.Success,
+            >= 85 => Color.Warning,
+            _ => Color.Error
+        };
+    }
+
+    private Color GetNCRColor(int openNCRs)
+    {
+        return openNCRs switch
+        {
+            0 => Color.Success,
+            <= 2 => Color.Warning,
+            _ => Color.Error
+        };
+    }
+}
