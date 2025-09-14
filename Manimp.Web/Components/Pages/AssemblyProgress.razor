@@ -1,0 +1,413 @@
+@page "/assembly-progress"
+@using Manimp.Shared.Models
+@using MudBlazor
+@inject IJSRuntime JSRuntime
+
+<PageTitle>EN 1090 Assembly Progress Tracking</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">EN 1090 Assembly Progress Tracking</MudText>
+    
+    <MudGrid>
+        <!-- Summary Cards -->
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h6" Color="Color.Primary">Total Assemblies</MudText>
+                            <MudText Typo="Typo.h4">@TotalAssemblies</MudText>
+                        </div>
+                        <MudIcon Icon="Icons.Material.Filled.Inventory" Color="Color.Primary" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h6" Color="Color.Success">Completed</MudText>
+                            <MudText Typo="Typo.h4">@CompletedAssemblies</MudText>
+                        </div>
+                        <MudIcon Icon="Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h6" Color="Color.Warning">In Progress</MudText>
+                            <MudText Typo="Typo.h4">@InProgressAssemblies</MudText>
+                        </div>
+                        <MudIcon Icon="Icons.Material.Filled.Build" Color="Color.Warning" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h6" Color="Color.Error">Open NCRs</MudText>
+                            <MudText Typo="Typo.h4">@OpenNCRs</MudText>
+                        </div>
+                        <MudIcon Icon="Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Filter Section -->
+    <MudPaper Class="pa-4 mt-4">
+        <MudGrid>
+            <MudItem xs="12" sm="6" md="3">
+                <MudSelect T="AssemblyProgressStatus?" @bind-Value="SelectedStatusFilter" Label="Filter by Status" Clearable="true">
+                    @foreach (var status in Enum.GetValues<AssemblyProgressStatus>())
+                    {
+                        <MudSelectItem Value="status">@GetStatusDisplayName(status)</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudTextField @bind-Value="SearchTerm" Label="Search Assembly Mark" Immediate="true" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudCheckBox T="bool" @bind-Checked="ShowOnlyOutsourced" Label="Show Only Outsourced Coating" />
+            </MudItem>
+            <MudItem xs="12" sm="6" md="3">
+                <MudButton StartIcon="Icons.Material.Filled.Refresh" Color="Color.Primary" Variant="Variant.Filled" OnClick="RefreshData">
+                    Refresh
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <!-- Assembly Progress Table -->
+    <MudPaper Class="mt-4">
+        <MudDataGrid T="Assembly" Items="@FilteredAssemblies" Sortable="true" Filterable="false" 
+                     RowsPerPage="25" Pageable="true" Loading="@IsLoading">
+            <Columns>
+                <PropertyColumn Property="x => x.AssemblyMark" Title="Assembly Mark" />
+                <PropertyColumn Property="x => x.Description" Title="Description" />
+                <TemplateColumn Title="Project">
+                    <CellTemplate>
+                        @context.Item.AssemblyList?.CrmProject?.Name
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Customer">
+                    <CellTemplate>
+                        @context.Item.AssemblyList?.CrmProject?.Customer?.CompanyName
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Current Status" Sortable="true">
+                    <CellTemplate>
+                        <MudChip Color="@GetStatusColor(context.Item.CurrentStatus)" Size="Size.Small">
+                            @GetStatusDisplayName(context.Item.CurrentStatus)
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Progress">
+                    <CellTemplate>
+                        <div class="d-flex align-center">
+                            <MudProgressLinear Value="@(context.Item.ProgressPercentage ?? 0)" Color="@GetProgressColor(context.Item.ProgressPercentage ?? 0)" Class="flex-grow-1" />
+                            <MudText Class="ml-2">@((context.Item.ProgressPercentage ?? 0).ToString("F0"))%</MudText>
+                        </div>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Outsourced">
+                    <CellTemplate>
+                        @if (context.Item.IsCoatingOutsourced)
+                        {
+                            <MudIcon Icon="Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Open NCRs">
+                    <CellTemplate>
+                        @{
+                            var openNCRs = context.Item.NonComplianceReports?.Count(ncr => ncr.Status != "Closed") ?? 0;
+                        }
+                        @if (openNCRs > 0)
+                        {
+                            <MudChip Color="Color.Error" Size="Size.Small">@openNCRs</MudChip>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" 
+                                   OnClick="@(() => ShowAssemblyDetails(context.Item.AssemblyId))">
+                            Details
+                        </MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary" 
+                                   OnClick="@(() => UpdateStatus(context.Item))">
+                            Update Status
+                        </MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudPaper>
+</MudContainer>
+
+<!-- Status Update Dialog -->
+<MudDialog @bind-IsVisible="ShowStatusUpdateDialog" Options="DialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Update Assembly Status</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (SelectedAssembly != null)
+        {
+            <MudTextField @bind-Value="SelectedAssembly.AssemblyMark" Label="Assembly Mark" ReadOnly="true" />
+            <MudTextField @bind-Value="@SelectedAssembly.CurrentStatus.ToString()" Label="Current Status" ReadOnly="true" Class="mt-3" />
+            
+            <MudSelect @bind-Value="NewStatus" Label="New Status" Class="mt-3">
+                @foreach (var status in GetValidNextStatuses(SelectedAssembly.CurrentStatus))
+                {
+                    <MudSelectItem Value="status">@GetStatusDisplayName(status)</MudSelectItem>
+                }
+            </MudSelect>
+            
+            <MudTextField @bind-Value="UpdateNotes" Label="Notes" Lines="3" Class="mt-3" />
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CancelStatusUpdate">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="ConfirmStatusUpdate">Update Status</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<Assembly> Assemblies = new();
+    private List<Assembly> FilteredAssemblies = new();
+    private AssemblyProgressStatus? SelectedStatusFilter;
+    private string SearchTerm = "";
+    private bool ShowOnlyOutsourced = false;
+    private bool IsLoading = true;
+    private bool ShowStatusUpdateDialog = false;
+    private Assembly? SelectedAssembly;
+    private AssemblyProgressStatus NewStatus;
+    private string UpdateNotes = "";
+
+    // Summary data
+    private int TotalAssemblies => Assemblies.Count;
+    private int CompletedAssemblies => Assemblies.Count(a => a.CurrentStatus == AssemblyProgressStatus.Delivered);
+    private int InProgressAssemblies => Assemblies.Count(a => a.CurrentStatus != AssemblyProgressStatus.NotStarted && a.CurrentStatus != AssemblyProgressStatus.Delivered);
+    private int OpenNCRs => Assemblies.Sum(a => a.NonComplianceReports?.Count(ncr => ncr.Status != "Closed") ?? 0);
+
+    private DialogOptions DialogOptions = new() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+        ApplyFilters();
+    }
+
+    private async Task RefreshData()
+    {
+        IsLoading = true;
+        try
+        {
+            // In a real implementation, this would call the API
+            // For demo purposes, we'll create some sample data
+            await Task.Delay(500); // Simulate API call
+            Assemblies = CreateSampleData();
+            ApplyFilters();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        FilteredAssemblies = Assemblies.Where(a =>
+            (SelectedStatusFilter == null || a.CurrentStatus == SelectedStatusFilter) &&
+            (string.IsNullOrWhiteSpace(SearchTerm) || a.AssemblyMark.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)) &&
+            (!ShowOnlyOutsourced || a.IsCoatingOutsourced)
+        ).ToList();
+    }
+
+    private Color GetStatusColor(AssemblyProgressStatus status)
+    {
+        return status switch
+        {
+            AssemblyProgressStatus.NotStarted => Color.Default,
+            AssemblyProgressStatus.Assembled => Color.Info,
+            AssemblyProgressStatus.Welded => Color.Primary,
+            AssemblyProgressStatus.ReadyForCoating => Color.Warning,
+            AssemblyProgressStatus.CoatingDone => Color.Secondary,
+            AssemblyProgressStatus.ReadyForDelivery => Color.Success,
+            AssemblyProgressStatus.Delivered => Color.Dark,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetProgressColor(decimal progress)
+    {
+        if (progress < 25) return Color.Error;
+        if (progress < 50) return Color.Warning;
+        if (progress < 75) return Color.Info;
+        if (progress < 100) return Color.Primary;
+        return Color.Success;
+    }
+
+    private string GetStatusDisplayName(AssemblyProgressStatus status)
+    {
+        return status switch
+        {
+            AssemblyProgressStatus.NotStarted => "Not Started",
+            AssemblyProgressStatus.Assembled => "Assembled",
+            AssemblyProgressStatus.Welded => "Welded",
+            AssemblyProgressStatus.ReadyForCoating => "Ready for Coating",
+            AssemblyProgressStatus.CoatingDone => "Coating Done",
+            AssemblyProgressStatus.ReadyForDelivery => "Ready for Delivery",
+            AssemblyProgressStatus.Delivered => "Delivered",
+            _ => status.ToString()
+        };
+    }
+
+    private List<AssemblyProgressStatus> GetValidNextStatuses(AssemblyProgressStatus currentStatus)
+    {
+        return currentStatus switch
+        {
+            AssemblyProgressStatus.NotStarted => new() { AssemblyProgressStatus.Assembled },
+            AssemblyProgressStatus.Assembled => new() { AssemblyProgressStatus.Welded },
+            AssemblyProgressStatus.Welded => new() { AssemblyProgressStatus.ReadyForCoating },
+            AssemblyProgressStatus.ReadyForCoating => new() { AssemblyProgressStatus.CoatingDone },
+            AssemblyProgressStatus.CoatingDone => new() { AssemblyProgressStatus.ReadyForDelivery },
+            AssemblyProgressStatus.ReadyForDelivery => new() { AssemblyProgressStatus.Delivered },
+            _ => new()
+        };
+    }
+
+    private void ShowAssemblyDetails(int assemblyId)
+    {
+        // Navigate to assembly details page
+        // Implementation would use NavigationManager
+    }
+
+    private void UpdateStatus(Assembly assembly)
+    {
+        SelectedAssembly = assembly;
+        NewStatus = assembly.CurrentStatus;
+        UpdateNotes = "";
+        ShowStatusUpdateDialog = true;
+    }
+
+    private void CancelStatusUpdate()
+    {
+        ShowStatusUpdateDialog = false;
+        SelectedAssembly = null;
+        UpdateNotes = "";
+    }
+
+    private async Task ConfirmStatusUpdate()
+    {
+        if (SelectedAssembly != null)
+        {
+            // In a real implementation, this would call the API
+            SelectedAssembly.CurrentStatus = NewStatus;
+            SelectedAssembly.ProgressPercentage = NewStatus switch
+            {
+                AssemblyProgressStatus.NotStarted => 0,
+                AssemblyProgressStatus.Assembled => 20,
+                AssemblyProgressStatus.Welded => 40,
+                AssemblyProgressStatus.ReadyForCoating => 60,
+                AssemblyProgressStatus.CoatingDone => 80,
+                AssemblyProgressStatus.ReadyForDelivery => 90,
+                AssemblyProgressStatus.Delivered => 100,
+                _ => SelectedAssembly.ProgressPercentage
+            };
+            
+            ShowStatusUpdateDialog = false;
+            SelectedAssembly = null;
+            UpdateNotes = "";
+            
+            // Show success message
+            // Implementation would use ISnackbar
+        }
+    }
+
+    private List<Assembly> CreateSampleData()
+    {
+        // Sample data for demonstration
+        return new List<Assembly>
+        {
+            new Assembly
+            {
+                AssemblyId = 1,
+                AssemblyMark = "AS-001",
+                Description = "Main Structure Assembly",
+                CurrentStatus = AssemblyProgressStatus.Assembled,
+                ProgressPercentage = 20,
+                IsCoatingOutsourced = false,
+                AssemblyList = new AssemblyList
+                {
+                    Name = "Project Alpha Assemblies",
+                    CrmProject = new CrmProject
+                    {
+                        Name = "Project Alpha",
+                        Customer = new Customer { CompanyName = "ABC Construction" }
+                    }
+                },
+                NonComplianceReports = new List<NonComplianceReport>()
+            },
+            new Assembly
+            {
+                AssemblyId = 2,
+                AssemblyMark = "AS-002",
+                Description = "Secondary Frame",
+                CurrentStatus = AssemblyProgressStatus.Welded,
+                ProgressPercentage = 40,
+                IsCoatingOutsourced = true,
+                AssemblyList = new AssemblyList
+                {
+                    Name = "Project Alpha Assemblies",
+                    CrmProject = new CrmProject
+                    {
+                        Name = "Project Alpha",
+                        Customer = new Customer { CompanyName = "ABC Construction" }
+                    }
+                },
+                NonComplianceReports = new List<NonComplianceReport>()
+            },
+            new Assembly
+            {
+                AssemblyId = 3,
+                AssemblyMark = "AS-003",
+                Description = "Support Beam Assembly",
+                CurrentStatus = AssemblyProgressStatus.Delivered,
+                ProgressPercentage = 100,
+                IsCoatingOutsourced = false,
+                AssemblyList = new AssemblyList
+                {
+                    Name = "Project Beta Assemblies",
+                    CrmProject = new CrmProject
+                    {
+                        Name = "Project Beta",
+                        Customer = new Customer { CompanyName = "XYZ Industries" }
+                    }
+                },
+                NonComplianceReports = new List<NonComplianceReport>()
+            }
+        };
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+    }
+}
+}

@@ -177,6 +177,27 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     /// </summary>
     public DbSet<PackingListEntry> PackingListEntries { get; set; }
 
+    // EN 1090 Progress Tracking DbSets
+    /// <summary>
+    /// Gets or sets the assembly status history records
+    /// </summary>
+    public DbSet<AssemblyStatusHistory> AssemblyStatusHistories { get; set; }
+
+    /// <summary>
+    /// Gets or sets the quality assurance records
+    /// </summary>
+    public DbSet<QualityAssuranceRecord> QualityAssuranceRecords { get; set; }
+
+    /// <summary>
+    /// Gets or sets the non-compliance reports
+    /// </summary>
+    public DbSet<NonComplianceReport> NonComplianceReports { get; set; }
+
+    /// <summary>
+    /// Gets or sets the outsourced coating tracking records
+    /// </summary>
+    public DbSet<OutsourcedCoatingTracking> OutsourcedCoatingTrackings { get; set; }
+
     /// <summary>
     /// Configures the model that was discovered by convention from the entity types
     /// </summary>
@@ -201,6 +222,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         // Apply CRM Module Model Configuration
         ApplyCrmModuleModel(modelBuilder);
+
+        // Apply EN 1090 Progress Tracking Model Configuration
+        ApplyEN1090ProgressTrackingModel(modelBuilder);
     }
 
     /// <summary>
@@ -1038,6 +1062,130 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.PackingListId);
             entity.HasIndex(e => e.AssemblyId);
             entity.HasIndex(e => e.AssemblyOutsourcingId);
+        });
+    }
+
+    /// <summary>
+    /// Applies EN 1090 Progress Tracking model configuration
+    /// </summary>
+    /// <param name="modelBuilder">The model builder</param>
+    private static void ApplyEN1090ProgressTrackingModel(ModelBuilder modelBuilder)
+    {
+        // Configure AssemblyStatusHistory
+        modelBuilder.Entity<AssemblyStatusHistory>(entity =>
+        {
+            entity.HasKey(e => e.AssemblyStatusHistoryId);
+            entity.Property(e => e.PreviousStatus).HasConversion<int>();
+            entity.Property(e => e.NewStatus).HasConversion<int>();
+            entity.Property(e => e.ChangedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.Assembly)
+                  .WithMany(a => a.StatusHistory)
+                  .HasForeignKey(e => e.AssemblyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.AssemblyId);
+            entity.HasIndex(e => e.ChangedUtc);
+            entity.HasIndex(e => e.NewStatus);
+            entity.HasIndex(e => e.ChangedBy);
+        });
+
+        // Configure QualityAssuranceRecord
+        modelBuilder.Entity<QualityAssuranceRecord>(entity =>
+        {
+            entity.HasKey(e => e.QualityAssuranceRecordId);
+            entity.Property(e => e.QAType).HasConversion<int>();
+            entity.Property(e => e.Result).HasConversion<int>();
+            entity.Property(e => e.ForStatus).HasConversion<int>();
+            entity.Property(e => e.PerformedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Findings).HasMaxLength(2000);
+            entity.Property(e => e.CorrectiveActions).HasMaxLength(1000);
+            entity.Property(e => e.EN1090Reference).HasMaxLength(50);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.Assembly)
+                  .WithMany(a => a.QualityAssuranceRecords)
+                  .HasForeignKey(e => e.AssemblyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.AssemblyId);
+            entity.HasIndex(e => e.QAType);
+            entity.HasIndex(e => e.Result);
+            entity.HasIndex(e => e.ForStatus);
+            entity.HasIndex(e => e.PerformedUtc);
+            entity.HasIndex(e => e.PerformedBy);
+        });
+
+        // Configure NonComplianceReport
+        modelBuilder.Entity<NonComplianceReport>(entity =>
+        {
+            entity.HasKey(e => e.NonComplianceReportId);
+            entity.Property(e => e.NCRNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.DetectedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Category).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Severity).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.RootCause).HasMaxLength(1000);
+            entity.Property(e => e.ImmediateActions).HasMaxLength(1000);
+            entity.Property(e => e.PreventiveActions).HasMaxLength(1000);
+            entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ResponsiblePerson).HasMaxLength(100);
+            entity.Property(e => e.ResolvedBy).HasMaxLength(100);
+            entity.Property(e => e.ResolutionNotes).HasMaxLength(1000);
+            entity.Property(e => e.EN1090Reference).HasMaxLength(100);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.Assembly)
+                  .WithMany(a => a.NonComplianceReports)
+                  .HasForeignKey(e => e.AssemblyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.NCRNumber).IsUnique();
+            entity.HasIndex(e => e.AssemblyId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.Severity);
+            entity.HasIndex(e => e.DetectedUtc);
+            entity.HasIndex(e => e.TargetResolutionDate);
+            entity.HasIndex(e => e.DetectedBy);
+            entity.HasIndex(e => e.ResponsiblePerson);
+        });
+
+        // Configure OutsourcedCoatingTracking
+        modelBuilder.Entity<OutsourcedCoatingTracking>(entity =>
+        {
+            entity.HasKey(e => e.OutsourcedCoatingTrackingId);
+            entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CoatingSpecification).HasMaxLength(500);
+            entity.Property(e => e.Cost).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.SentBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ReceivedBy).HasMaxLength(100);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.Assembly)
+                  .WithMany(a => a.OutsourcedCoatingTrackings)
+                  .HasForeignKey(e => e.AssemblyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Supplier)
+                  .WithMany()
+                  .HasForeignKey(e => e.SupplierId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.AssemblyId);
+            entity.HasIndex(e => e.SupplierId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.SentDate);
+            entity.HasIndex(e => e.ExpectedReturnDate);
+            entity.HasIndex(e => e.ActualReturnDate);
+        });
+
+        // Update Assembly configuration to include EN 1090 fields
+        modelBuilder.Entity<Assembly>(entity =>
+        {
+            entity.Property(e => e.CurrentStatus).HasConversion<int>();
         });
     }
 }

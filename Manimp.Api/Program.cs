@@ -24,6 +24,7 @@ builder.Services.AddScoped<ITenantDbContext, TenantDbContextService>();
 builder.Services.AddScoped<IFeatureGate, FeatureGateService>();
 builder.Services.AddScoped<IProjectLimitService, ProjectLimitService>();
 builder.Services.AddScoped<IEN1090ComplianceService, EN1090ComplianceService>();
+builder.Services.AddScoped<AssemblyProgressService>();
 
 var app = builder.Build();
 

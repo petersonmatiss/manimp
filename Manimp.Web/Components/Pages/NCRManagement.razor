@@ -1,0 +1,571 @@
+@page "/ncr-management"
+@using Manimp.Shared.Models
+@using MudBlazor
+
+<PageTitle>EN 1090 Non-Compliance Reports (NCR)</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="mt-4">
+    <MudText Typo="Typo.h4" Class="mb-4">EN 1090 Non-Compliance Reports (NCR)</MudText>
+    
+    <!-- Summary Cards -->
+    <MudGrid Class="mb-4">
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h6" Color="Color.Error">Open NCRs</MudText>
+                            <MudText Typo="Typo.h4">@OpenNCRs</MudText>
+                        </div>
+                        <MudIcon Icon="Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h6" Color="Color.Error">Critical</MudText>
+                            <MudText Typo="Typo.h4">@CriticalNCRs</MudText>
+                        </div>
+                        <MudIcon Icon="Icons.Material.Filled.PriorityHigh" Color="Color.Error" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h6" Color="Color.Warning">Overdue</MudText>
+                            <MudText Typo="Typo.h4">@OverdueNCRs</MudText>
+                        </div>
+                        <MudIcon Icon="Icons.Material.Filled.Schedule" Color="Color.Warning" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+        
+        <MudItem xs="12" sm="6" md="3">
+            <MudCard>
+                <MudCardContent>
+                    <div class="d-flex align-center justify-space-between">
+                        <div>
+                            <MudText Typo="Typo.h6" Color="Color.Success">Resolved</MudText>
+                            <MudText Typo="Typo.h4">@ResolvedNCRs</MudText>
+                        </div>
+                        <MudIcon Icon="Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Large" />
+                    </div>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Actions -->
+    <MudPaper Class="pa-4 mb-4">
+        <div class="d-flex align-center justify-space-between">
+            <div class="d-flex align-center gap-4">
+                <MudSelect @bind-Value="SelectedStatusFilter" Label="Filter by Status" Clearable="true" Style="min-width: 200px;">
+                    <MudSelectItem Value="@("Open")">Open</MudSelectItem>
+                    <MudSelectItem Value="@("In Progress")">In Progress</MudSelectItem>
+                    <MudSelectItem Value="@("Resolved")">Resolved</MudSelectItem>
+                    <MudSelectItem Value="@("Closed")">Closed</MudSelectItem>
+                </MudSelect>
+                
+                <MudSelect @bind-Value="SelectedSeverityFilter" Label="Filter by Severity" Clearable="true" Style="min-width: 200px;">
+                    <MudSelectItem Value="@("Critical")">Critical</MudSelectItem>
+                    <MudSelectItem Value="@("Major")">Major</MudSelectItem>
+                    <MudSelectItem Value="@("Minor")">Minor</MudSelectItem>
+                </MudSelect>
+                
+                <MudTextField @bind-Value="SearchTerm" Label="Search NCR Number" Immediate="true" Style="min-width: 200px;" />
+            </div>
+            
+            <MudButton StartIcon="Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled" 
+                       OnClick="CreateNewNCR">
+                Create NCR
+            </MudButton>
+        </div>
+    </MudPaper>
+
+    <!-- NCR Table -->
+    <MudPaper>
+        <MudDataGrid T="NonComplianceReport" Items="@FilteredNCRs" Sortable="true" Filterable="false" 
+                     RowsPerPage="25" Pageable="true" Loading="@IsLoading">
+            <Columns>
+                <PropertyColumn Property="x => x.NCRNumber" Title="NCR Number" />
+                <TemplateColumn Title="Assembly">
+                    <CellTemplate>
+                        @context.Item.Assembly?.AssemblyMark
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Category" Title="Category" />
+                <TemplateColumn Title="Severity" Sortable="true">
+                    <CellTemplate>
+                        <MudChip Color="@GetSeverityColor(context.Item.Severity)" Size="Size.Small">
+                            @context.Item.Severity
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Status" Sortable="true">
+                    <CellTemplate>
+                        <MudChip Color="@GetStatusColor(context.Item.Status)" Size="Size.Small">
+                            @context.Item.Status
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.DetectedBy" Title="Detected By" />
+                <PropertyColumn Property="x => x.DetectedUtc" Title="Detected Date" Format="yyyy-MM-dd" />
+                <PropertyColumn Property="x => x.TargetResolutionDate" Title="Target Resolution" Format="yyyy-MM-dd" />
+                <PropertyColumn Property="x => x.ResponsiblePerson" Title="Responsible Person" />
+                <TemplateColumn Title="Days Open" Sortable="true">
+                    <CellTemplate>
+                        @{
+                            var daysOpen = (DateTime.UtcNow - context.Item.DetectedUtc).Days;
+                        }
+                        <span class="@(daysOpen > 30 ? "mud-error-text" : daysOpen > 14 ? "mud-warning-text" : "")">
+                            @daysOpen days
+                        </span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" 
+                                   OnClick="@(() => ViewNCRDetails(context.Item))">
+                            View
+                        </MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Secondary" 
+                                   OnClick="@(() => EditNCR(context.Item))">
+                            Edit
+                        </MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudPaper>
+</MudContainer>
+
+<!-- Create/Edit NCR Dialog -->
+<MudDialog @bind-IsVisible="ShowNCRDialog" Options="DialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsEditMode ? "Edit NCR" : "Create New NCR")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudForm @ref="NCRForm" @bind-IsValid="IsNCRFormValid">
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="CurrentNCR.NCRNumber" Label="NCR Number" Required="true" ReadOnly="@IsEditMode" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="CurrentNCR.AssemblyId" Label="Assembly" Required="true">
+                        @foreach (var assembly in AvailableAssemblies)
+                        {
+                            <MudSelectItem Value="assembly.AssemblyId">@assembly.AssemblyMark - @assembly.Description</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="CurrentNCR.Category" Label="Category" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="CurrentNCR.Severity" Label="Severity" Required="true">
+                        <MudSelectItem Value="@("Critical")">Critical</MudSelectItem>
+                        <MudSelectItem Value="@("Major")">Major</MudSelectItem>
+                        <MudSelectItem Value="@("Minor")">Minor</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="CurrentNCR.DetectedBy" Label="Detected By" Required="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="CurrentNCR.EN1090Reference" Label="EN 1090 Reference" 
+                                  Placeholder="e.g., Section 10.2.1, Table 15" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="CurrentNCR.Description" Label="Description" Required="true" 
+                                  Lines="4" Placeholder="Detailed description of the non-compliance..." />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="CurrentNCR.RootCause" Label="Root Cause Analysis" 
+                                  Lines="3" Placeholder="Analysis of the root cause..." />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="CurrentNCR.ImmediateActions" Label="Immediate Actions" 
+                                  Lines="3" Placeholder="Immediate corrective actions taken..." />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="CurrentNCR.PreventiveActions" Label="Preventive Actions" 
+                                  Lines="3" Placeholder="Actions to prevent recurrence..." />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField @bind-Value="CurrentNCR.ResponsiblePerson" Label="Responsible Person" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudDatePicker @bind-Date="TargetResolutionDate" Label="Target Resolution Date" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudSelect @bind-Value="CurrentNCR.Status" Label="Status">
+                        <MudSelectItem Value="@("Open")">Open</MudSelectItem>
+                        <MudSelectItem Value="@("In Progress")">In Progress</MudSelectItem>
+                        <MudSelectItem Value="@("Resolved")">Resolved</MudSelectItem>
+                        <MudSelectItem Value="@("Closed")">Closed</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudCheckBox T="bool" @bind-Checked="CurrentNCR.CustomerNotificationRequired" Label="Customer Notification Required" />
+                </MudItem>
+                
+                @if (CurrentNCR.Status == "Resolved" || CurrentNCR.Status == "Closed")
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudTextField @bind-Value="CurrentNCR.ResolvedBy" Label="Resolved By" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudDatePicker @bind-Date="ResolvedDate" Label="Resolved Date" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="CurrentNCR.ResolutionNotes" Label="Resolution Notes" 
+                                      Lines="3" Placeholder="Notes about the resolution..." />
+                    </MudItem>
+                }
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CancelNCRDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="SaveNCR" Disabled="!IsNCRFormValid || IsSaving">
+            @if (IsSaving)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <span class="ml-2">Saving...</span>
+            }
+            else
+            {
+                <span>@(IsEditMode ? "Update" : "Create") NCR</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+<!-- NCR Details Dialog -->
+<MudDialog @bind-IsVisible="ShowNCRDetailsDialog" Options="ViewDialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">NCR Details - @SelectedNCR?.NCRNumber</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (SelectedNCR != null)
+        {
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedNCR.NCRNumber" Label="NCR Number" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedNCR.Assembly?.AssemblyMark" Label="Assembly" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedNCR.Category" Label="Category" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedNCR.Severity" Label="Severity" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedNCR.DetectedBy" Label="Detected By" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedNCR.DetectedUtc.ToString("yyyy-MM-dd HH:mm")" Label="Detected Date" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedNCR.Status" Label="Status" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedNCR.EN1090Reference" Label="EN 1090 Reference" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Value="@SelectedNCR.Description" Label="Description" Lines="4" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Value="@SelectedNCR.RootCause" Label="Root Cause Analysis" Lines="3" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Value="@SelectedNCR.ImmediateActions" Label="Immediate Actions" Lines="3" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Value="@SelectedNCR.PreventiveActions" Label="Preventive Actions" Lines="3" ReadOnly="true" />
+                </MudItem>
+                @if (SelectedNCR.Status == "Resolved" || SelectedNCR.Status == "Closed")
+                {
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@SelectedNCR.ResolvedBy" Label="Resolved By" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="6">
+                        <MudTextField Value="@SelectedNCR.ResolvedUtc?.ToString("yyyy-MM-dd HH:mm")" Label="Resolved Date" ReadOnly="true" />
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Value="@SelectedNCR.ResolutionNotes" Label="Resolution Notes" Lines="3" ReadOnly="true" />
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseNCRDetailsDialog">Close</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Outlined" OnClick="@(() => EditNCR(SelectedNCR!))">
+            Edit NCR
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private List<NonComplianceReport> NCRs = new();
+    private List<NonComplianceReport> FilteredNCRs = new();
+    private List<Assembly> AvailableAssemblies = new();
+    private string? SelectedStatusFilter;
+    private string? SelectedSeverityFilter;
+    private string SearchTerm = "";
+    private bool IsLoading = true;
+    private bool ShowNCRDialog = false;
+    private bool ShowNCRDetailsDialog = false;
+    private bool IsEditMode = false;
+    private bool IsNCRFormValid = false;
+    private bool IsSaving = false;
+    
+    private NonComplianceReport CurrentNCR = new();
+    private NonComplianceReport? SelectedNCR;
+    private MudForm NCRForm = new();
+    private DateTime? TargetResolutionDate;
+    private DateTime? ResolvedDate;
+
+    // Summary data
+    private int OpenNCRs => NCRs.Count(ncr => ncr.Status == "Open" || ncr.Status == "In Progress");
+    private int CriticalNCRs => NCRs.Count(ncr => ncr.Severity == "Critical" && ncr.Status != "Closed");
+    private int OverdueNCRs => NCRs.Count(ncr => ncr.TargetResolutionDate.HasValue && 
+                                                ncr.TargetResolutionDate < DateTime.UtcNow && 
+                                                ncr.Status != "Closed");
+    private int ResolvedNCRs => NCRs.Count(ncr => ncr.Status == "Resolved" || ncr.Status == "Closed");
+
+    private DialogOptions DialogOptions = new() { MaxWidth = MaxWidth.Large, FullWidth = true };
+    private DialogOptions ViewDialogOptions = new() { MaxWidth = MaxWidth.Large, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        ApplyFilters();
+    }
+
+    private async Task LoadData()
+    {
+        IsLoading = true;
+        try
+        {
+            // In a real implementation, this would call the API
+            await Task.Delay(500); // Simulate API call
+            NCRs = CreateSampleNCRData();
+            AvailableAssemblies = CreateSampleAssemblyData();
+            ApplyFilters();
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void ApplyFilters()
+    {
+        FilteredNCRs = NCRs.Where(ncr =>
+            (string.IsNullOrWhiteSpace(SelectedStatusFilter) || ncr.Status == SelectedStatusFilter) &&
+            (string.IsNullOrWhiteSpace(SelectedSeverityFilter) || ncr.Severity == SelectedSeverityFilter) &&
+            (string.IsNullOrWhiteSpace(SearchTerm) || ncr.NCRNumber.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private void CreateNewNCR()
+    {
+        CurrentNCR = new NonComplianceReport
+        {
+            NCRNumber = GenerateNCRNumber(),
+            DetectedUtc = DateTime.UtcNow,
+            Status = "Open",
+            Severity = "Minor"
+        };
+        TargetResolutionDate = DateTime.UtcNow.AddDays(30);
+        ResolvedDate = null;
+        IsEditMode = false;
+        ShowNCRDialog = true;
+    }
+
+    private void EditNCR(NonComplianceReport ncr)
+    {
+        CurrentNCR = new NonComplianceReport
+        {
+            NonComplianceReportId = ncr.NonComplianceReportId,
+            NCRNumber = ncr.NCRNumber,
+            AssemblyId = ncr.AssemblyId,
+            Category = ncr.Category,
+            Severity = ncr.Severity,
+            Description = ncr.Description,
+            DetectedBy = ncr.DetectedBy,
+            DetectedUtc = ncr.DetectedUtc,
+            RootCause = ncr.RootCause,
+            ImmediateActions = ncr.ImmediateActions,
+            PreventiveActions = ncr.PreventiveActions,
+            Status = ncr.Status,
+            ResponsiblePerson = ncr.ResponsiblePerson,
+            TargetResolutionDate = ncr.TargetResolutionDate,
+            ResolvedBy = ncr.ResolvedBy,
+            ResolvedUtc = ncr.ResolvedUtc,
+            ResolutionNotes = ncr.ResolutionNotes,
+            EN1090Reference = ncr.EN1090Reference,
+            CustomerNotificationRequired = ncr.CustomerNotificationRequired
+        };
+        TargetResolutionDate = ncr.TargetResolutionDate;
+        ResolvedDate = ncr.ResolvedUtc;
+        IsEditMode = true;
+        ShowNCRDialog = true;
+    }
+
+    private void ViewNCRDetails(NonComplianceReport ncr)
+    {
+        SelectedNCR = ncr;
+        ShowNCRDetailsDialog = true;
+    }
+
+    private void CancelNCRDialog()
+    {
+        ShowNCRDialog = false;
+        CurrentNCR = new();
+    }
+
+    private void CloseNCRDetailsDialog()
+    {
+        ShowNCRDetailsDialog = false;
+        SelectedNCR = null;
+    }
+
+    private async Task SaveNCR()
+    {
+        if (!IsNCRFormValid) return;
+
+        IsSaving = true;
+        try
+        {
+            CurrentNCR.TargetResolutionDate = TargetResolutionDate;
+            CurrentNCR.ResolvedUtc = ResolvedDate;
+
+            // In a real implementation, this would call the API
+            await Task.Delay(1000); // Simulate API call
+
+            if (IsEditMode)
+            {
+                var existingNCR = NCRs.FirstOrDefault(n => n.NonComplianceReportId == CurrentNCR.NonComplianceReportId);
+                if (existingNCR != null)
+                {
+                    var index = NCRs.IndexOf(existingNCR);
+                    NCRs[index] = CurrentNCR;
+                }
+            }
+            else
+            {
+                CurrentNCR.NonComplianceReportId = NCRs.Count + 1;
+                CurrentNCR.Assembly = AvailableAssemblies.FirstOrDefault(a => a.AssemblyId == CurrentNCR.AssemblyId);
+                NCRs.Add(CurrentNCR);
+            }
+
+            ApplyFilters();
+            ShowNCRDialog = false;
+            
+            // Show success message
+            // In a real implementation, you would use ISnackbar for notifications
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private Color GetSeverityColor(string severity)
+    {
+        return severity switch
+        {
+            "Critical" => Color.Error,
+            "Major" => Color.Warning,
+            "Minor" => Color.Info,
+            _ => Color.Default
+        };
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "Open" => Color.Error,
+            "In Progress" => Color.Warning,
+            "Resolved" => Color.Success,
+            "Closed" => Color.Dark,
+            _ => Color.Default
+        };
+    }
+
+    private string GenerateNCRNumber()
+    {
+        return $"NCR-{DateTime.UtcNow:yyyyMMdd}-{NCRs.Count + 1:D3}";
+    }
+
+    private List<NonComplianceReport> CreateSampleNCRData()
+    {
+        return new List<NonComplianceReport>
+        {
+            new NonComplianceReport
+            {
+                NonComplianceReportId = 1,
+                NCRNumber = "NCR-20231201-001",
+                AssemblyId = 1,
+                Category = "Welding Defect",
+                Severity = "Major",
+                Description = "Incomplete weld penetration observed in connection C-03",
+                DetectedBy = "John Smith",
+                DetectedUtc = DateTime.UtcNow.AddDays(-5),
+                Status = "Open",
+                ResponsiblePerson = "Mike Johnson",
+                TargetResolutionDate = DateTime.UtcNow.AddDays(10),
+                EN1090Reference = "Section 7.4.2",
+                Assembly = new Assembly { AssemblyId = 1, AssemblyMark = "AS-001" }
+            },
+            new NonComplianceReport
+            {
+                NonComplianceReportId = 2,
+                NCRNumber = "NCR-20231130-002",
+                AssemblyId = 2,
+                Category = "Dimensional Issue",
+                Severity = "Critical",
+                Description = "Assembly dimensions exceed tolerance limits by 15mm",
+                DetectedBy = "Sarah Wilson",
+                DetectedUtc = DateTime.UtcNow.AddDays(-10),
+                Status = "In Progress",
+                ResponsiblePerson = "Alex Brown",
+                TargetResolutionDate = DateTime.UtcNow.AddDays(-2),
+                EN1090Reference = "Section 11.2",
+                Assembly = new Assembly { AssemblyId = 2, AssemblyMark = "AS-002" }
+            }
+        };
+    }
+
+    private List<Assembly> CreateSampleAssemblyData()
+    {
+        return new List<Assembly>
+        {
+            new Assembly { AssemblyId = 1, AssemblyMark = "AS-001", Description = "Main Structure Assembly" },
+            new Assembly { AssemblyId = 2, AssemblyMark = "AS-002", Description = "Secondary Frame" },
+            new Assembly { AssemblyId = 3, AssemblyMark = "AS-003", Description = "Support Beam Assembly" }
+        };
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+    }
+}

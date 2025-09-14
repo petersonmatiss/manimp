@@ -383,6 +383,16 @@ public class Assembly
     public DateTime? ManufacturingCompleted { get; set; }
 
     /// <summary>
+    /// Gets or sets the current EN 1090 progress status
+    /// </summary>
+    public AssemblyProgressStatus CurrentStatus { get; set; } = AssemblyProgressStatus.NotStarted;
+
+    /// <summary>
+    /// Gets or sets whether coating is outsourced for this assembly
+    /// </summary>
+    public bool IsCoatingOutsourced { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets when the assembly was created
     /// </summary>
     public DateTime CreatedUtc { get; set; } = DateTime.UtcNow;
@@ -412,6 +422,26 @@ public class Assembly
     /// Gets the outsourcing records for this assembly
     /// </summary>
     public ICollection<AssemblyOutsourcing> AssemblyOutsourcings { get; set; } = new HashSet<AssemblyOutsourcing>();
+
+    /// <summary>
+    /// Gets the status history for this assembly
+    /// </summary>
+    public ICollection<AssemblyStatusHistory> StatusHistory { get; set; } = new HashSet<AssemblyStatusHistory>();
+
+    /// <summary>
+    /// Gets the quality assurance records for this assembly
+    /// </summary>
+    public ICollection<QualityAssuranceRecord> QualityAssuranceRecords { get; set; } = new HashSet<QualityAssuranceRecord>();
+
+    /// <summary>
+    /// Gets the non-compliance reports for this assembly
+    /// </summary>
+    public ICollection<NonComplianceReport> NonComplianceReports { get; set; } = new HashSet<NonComplianceReport>();
+
+    /// <summary>
+    /// Gets the outsourced coating tracking records for this assembly
+    /// </summary>
+    public ICollection<OutsourcedCoatingTracking> OutsourcedCoatingTrackings { get; set; } = new HashSet<OutsourcedCoatingTracking>();
 }
 
 /// <summary>

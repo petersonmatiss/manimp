@@ -1,0 +1,414 @@
+@page "/assembly/{AssemblyId:int}/qa"
+@using Manimp.Shared.Models
+@using Manimp.Shared.DTOs
+@using MudBlazor
+
+<PageTitle>Quality Assurance - Assembly @AssemblyMark</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    <MudBreadcrumbs Items="_breadcrumbItems" />
+    
+    <MudText Typo="Typo.h4" Class="mb-4">Quality Assurance - Assembly @AssemblyMark</MudText>
+    
+    @if (Assembly != null)
+    {
+        <MudGrid>
+            <!-- Assembly Information -->
+            <MudItem xs="12" md="4">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6" Class="mb-2">Assembly Information</MudText>
+                        <MudText><strong>Mark:</strong> @Assembly.AssemblyMark</MudText>
+                        <MudText><strong>Description:</strong> @Assembly.Description</MudText>
+                        <MudText><strong>Current Status:</strong> @GetStatusDisplayName(Assembly.CurrentStatus)</MudText>
+                        <MudText><strong>Progress:</strong> @(Assembly.ProgressPercentage?.ToString("F0") ?? "0")%</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+            
+            <!-- QA Form -->
+            <MudItem xs="12" md="8">
+                <MudCard>
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6" Class="mb-4">Add Quality Assurance Record</MudText>
+                        
+                        <MudForm @ref="Form" @bind-IsValid="IsFormValid">
+                            <MudGrid>
+                                <MudItem xs="12" sm="6">
+                                    <MudSelect @bind-Value="NewQARecord.QAType" Label="QA Type" Required="true">
+                                        @foreach (var qaType in Enum.GetValues<QualityAssuranceType>())
+                                        {
+                                            <MudSelectItem Value="qaType">@GetQATypeDisplayName(qaType)</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                
+                                <MudItem xs="12" sm="6">
+                                    <MudSelect @bind-Value="NewQARecord.ForStatus" Label="For Status" Required="true">
+                                        @foreach (var status in GetAvailableStatuses())
+                                        {
+                                            <MudSelectItem Value="status">@GetStatusDisplayName(status)</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                
+                                <MudItem xs="12" sm="6">
+                                    <MudSelect @bind-Value="NewQARecord.Result" Label="Result" Required="true">
+                                        @foreach (var result in Enum.GetValues<QAResult>())
+                                        {
+                                            <MudSelectItem Value="result">@GetQAResultDisplayName(result)</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                
+                                <MudItem xs="12" sm="6">
+                                    <MudTextField @bind-Value="NewQARecord.PerformedBy" Label="Performed By" Required="true" />
+                                </MudItem>
+                                
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="NewQARecord.EN1090Reference" Label="EN 1090 Reference" 
+                                                  Placeholder="e.g., Section 10.2.1, Table 15" />
+                                </MudItem>
+                                
+                                <MudItem xs="12">
+                                    <MudTextField @bind-Value="NewQARecord.Findings" Label="Findings and Observations" 
+                                                  Lines="4" Placeholder="Detailed findings from the quality check..." />
+                                </MudItem>
+                                
+                                @if (NewQARecord.Result == QAResult.Fail || NewQARecord.Result == QAResult.PassWithNotes)
+                                {
+                                    <MudItem xs="12">
+                                        <MudTextField @bind-Value="NewQARecord.CorrectiveActions" Label="Corrective Actions" 
+                                                      Lines="3" Placeholder="Required corrective actions..." />
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                            
+                            <MudCardActions Class="mt-4">
+                                <MudButton StartIcon="Icons.Material.Filled.Save" Color="Color.Primary" 
+                                           Variant="Variant.Filled" OnClick="SaveQARecord" Disabled="!IsFormValid || IsSaving">
+                                    @if (IsSaving)
+                                    {
+                                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                                        <span class="ml-2">Saving...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Save QA Record</span>
+                                    }
+                                </MudButton>
+                                <MudButton StartIcon="Icons.Material.Filled.Clear" Color="Color.Secondary" 
+                                           Variant="Variant.Outlined" OnClick="ClearForm">
+                                    Clear
+                                </MudButton>
+                            </MudCardActions>
+                        </MudForm>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+        
+        <!-- Existing QA Records -->
+        <MudCard Class="mt-4">
+            <MudCardContent>
+                <MudText Typo="Typo.h6" Class="mb-4">Quality Assurance History</MudText>
+                
+                @if (Assembly.QualityAssuranceRecords?.Any() == true)
+                {
+                    <MudDataGrid Items="Assembly.QualityAssuranceRecords.OrderByDescending(qa => qa.PerformedUtc)" 
+                                 Sortable="true" Filterable="false" RowsPerPage="10" Pageable="true">
+                        <Columns>
+                            <PropertyColumn Property="x => x.PerformedUtc" Title="Date" Format="yyyy-MM-dd HH:mm" />
+                            <TemplateColumn Title="QA Type">
+                                <CellTemplate>
+                                    @GetQATypeDisplayName(context.Item.QAType)
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="For Status">
+                                <CellTemplate>
+                                    @GetStatusDisplayName(context.Item.ForStatus)
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <TemplateColumn Title="Result">
+                                <CellTemplate>
+                                    <MudChip Color="@GetResultColor(context.Item.Result)" Size="Size.Small">
+                                        @GetQAResultDisplayName(context.Item.Result)
+                                    </MudChip>
+                                </CellTemplate>
+                            </TemplateColumn>
+                            <PropertyColumn Property="x => x.PerformedBy" Title="Performed By" />
+                            <PropertyColumn Property="x => x.EN1090Reference" Title="EN 1090 Ref" />
+                            <TemplateColumn Title="Actions">
+                                <CellTemplate>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary"
+                                               OnClick="@(() => ViewQADetails(context.Item))">
+                                        View Details
+                                    </MudButton>
+                                </CellTemplate>
+                            </TemplateColumn>
+                        </Columns>
+                    </MudDataGrid>
+                }
+                else
+                {
+                    <MudAlert Severity="Severity.Info">No quality assurance records found for this assembly.</MudAlert>
+                }
+            </MudCardContent>
+        </MudCard>
+    }
+</MudContainer>
+
+<!-- QA Details Dialog -->
+<MudDialog @bind-IsVisible="ShowQADetailsDialog" Options="DialogOptions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">QA Record Details</MudText>
+    </TitleContent>
+    <DialogContent>
+        @if (SelectedQARecord != null)
+        {
+            <MudGrid>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@GetQATypeDisplayName(SelectedQARecord.QAType)" Label="QA Type" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@GetStatusDisplayName(SelectedQARecord.ForStatus)" Label="For Status" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@GetQAResultDisplayName(SelectedQARecord.Result)" Label="Result" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedQARecord.PerformedBy" Label="Performed By" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedQARecord.PerformedUtc.ToString("yyyy-MM-dd HH:mm")" Label="Date" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12" sm="6">
+                    <MudTextField Value="@SelectedQARecord.EN1090Reference" Label="EN 1090 Reference" ReadOnly="true" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Value="@SelectedQARecord.Findings" Label="Findings" Lines="4" ReadOnly="true" />
+                </MudItem>
+                @if (!string.IsNullOrEmpty(SelectedQARecord.CorrectiveActions))
+                {
+                    <MudItem xs="12">
+                        <MudTextField Value="@SelectedQARecord.CorrectiveActions" Label="Corrective Actions" Lines="3" ReadOnly="true" />
+                    </MudItem>
+                }
+            </MudGrid>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="CloseQADetailsDialog">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter] public int AssemblyId { get; set; }
+    
+    private Assembly? Assembly;
+    private string AssemblyMark = "";
+    private AddQARecordRequest NewQARecord = new();
+    private MudForm Form = new();
+    private bool IsFormValid = false;
+    private bool IsSaving = false;
+    private bool ShowQADetailsDialog = false;
+    private QualityAssuranceRecord? SelectedQARecord;
+    
+    private List<BreadcrumbItem> _breadcrumbItems = new();
+    private DialogOptions DialogOptions = new() { MaxWidth = MaxWidth.Large, FullWidth = true };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAssembly();
+        SetupBreadcrumbs();
+        InitializeNewQARecord();
+    }
+
+    private async Task LoadAssembly()
+    {
+        // In a real implementation, this would call the API
+        // For demo purposes, we'll create sample data
+        await Task.Delay(100);
+        
+        Assembly = new Assembly
+        {
+            AssemblyId = AssemblyId,
+            AssemblyMark = $"AS-{AssemblyId:D3}",
+            Description = "Sample Assembly Description",
+            CurrentStatus = AssemblyProgressStatus.Assembled,
+            ProgressPercentage = 20,
+            QualityAssuranceRecords = new List<QualityAssuranceRecord>
+            {
+                new QualityAssuranceRecord
+                {
+                    QualityAssuranceRecordId = 1,
+                    QAType = QualityAssuranceType.VisualTesting,
+                    Result = QAResult.Pass,
+                    PerformedBy = "John Smith",
+                    ForStatus = AssemblyProgressStatus.Assembled,
+                    PerformedUtc = DateTime.UtcNow.AddDays(-1),
+                    EN1090Reference = "Section 10.2.1",
+                    Findings = "All visual checks passed. No defects observed."
+                }
+            }
+        };
+        
+        AssemblyMark = Assembly.AssemblyMark;
+    }
+
+    private void SetupBreadcrumbs()
+    {
+        _breadcrumbItems = new List<BreadcrumbItem>
+        {
+            new BreadcrumbItem("Home", href: "/"),
+            new BreadcrumbItem("Assembly Progress", href: "/assembly-progress"),
+            new BreadcrumbItem($"QA - {AssemblyMark}", href: null, disabled: true)
+        };
+    }
+
+    private void InitializeNewQARecord()
+    {
+        NewQARecord = new AddQARecordRequest
+        {
+            QAType = QualityAssuranceType.VisualTesting,
+            ForStatus = Assembly?.CurrentStatus ?? AssemblyProgressStatus.NotStarted,
+            Result = QAResult.Pass,
+            PerformedBy = ""
+        };
+    }
+
+    private List<AssemblyProgressStatus> GetAvailableStatuses()
+    {
+        if (Assembly == null) return new List<AssemblyProgressStatus>();
+        
+        var statuses = new List<AssemblyProgressStatus> { Assembly.CurrentStatus };
+        
+        // Add next status if applicable
+        var nextStatus = Assembly.CurrentStatus switch
+        {
+            AssemblyProgressStatus.NotStarted => AssemblyProgressStatus.Assembled,
+            AssemblyProgressStatus.Assembled => AssemblyProgressStatus.Welded,
+            AssemblyProgressStatus.Welded => AssemblyProgressStatus.ReadyForCoating,
+            AssemblyProgressStatus.ReadyForCoating => AssemblyProgressStatus.CoatingDone,
+            AssemblyProgressStatus.CoatingDone => AssemblyProgressStatus.ReadyForDelivery,
+            AssemblyProgressStatus.ReadyForDelivery => AssemblyProgressStatus.Delivered,
+            _ => (AssemblyProgressStatus?)null
+        };
+        
+        if (nextStatus.HasValue)
+        {
+            statuses.Add(nextStatus.Value);
+        }
+        
+        return statuses;
+    }
+
+    private async Task SaveQARecord()
+    {
+        if (!IsFormValid) return;
+        
+        IsSaving = true;
+        try
+        {
+            // In a real implementation, this would call the API
+            await Task.Delay(1000); // Simulate API call
+            
+            // Add to local collection for demo
+            var newRecord = new QualityAssuranceRecord
+            {
+                QualityAssuranceRecordId = Assembly!.QualityAssuranceRecords!.Count + 1,
+                QAType = NewQARecord.QAType,
+                Result = NewQARecord.Result,
+                PerformedBy = NewQARecord.PerformedBy,
+                ForStatus = NewQARecord.ForStatus,
+                PerformedUtc = DateTime.UtcNow,
+                Findings = NewQARecord.Findings,
+                CorrectiveActions = NewQARecord.CorrectiveActions,
+                EN1090Reference = NewQARecord.EN1090Reference
+            };
+            
+            Assembly.QualityAssuranceRecords.Add(newRecord);
+            
+            // Show success message and clear form
+            ClearForm();
+            
+            // In a real implementation, you would use ISnackbar for notifications
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private void ClearForm()
+    {
+        InitializeNewQARecord();
+        Form.ResetAsync();
+    }
+
+    private void ViewQADetails(QualityAssuranceRecord qaRecord)
+    {
+        SelectedQARecord = qaRecord;
+        ShowQADetailsDialog = true;
+    }
+
+    private void CloseQADetailsDialog()
+    {
+        ShowQADetailsDialog = false;
+        SelectedQARecord = null;
+    }
+
+    #region Display Helper Methods
+
+    private string GetStatusDisplayName(AssemblyProgressStatus status)
+    {
+        return status switch
+        {
+            AssemblyProgressStatus.NotStarted => "Not Started",
+            AssemblyProgressStatus.Assembled => "Assembled",
+            AssemblyProgressStatus.Welded => "Welded",
+            AssemblyProgressStatus.ReadyForCoating => "Ready for Coating",
+            AssemblyProgressStatus.CoatingDone => "Coating Done",
+            AssemblyProgressStatus.ReadyForDelivery => "Ready for Delivery",
+            AssemblyProgressStatus.Delivered => "Delivered",
+            _ => status.ToString()
+        };
+    }
+
+    private string GetQATypeDisplayName(QualityAssuranceType qaType)
+    {
+        return qaType switch
+        {
+            QualityAssuranceType.VisualTesting => "Visual Testing (VT)",
+            QualityAssuranceType.DimensionalInspection => "Dimensional Inspection",
+            QualityAssuranceType.WeldQualityInspection => "Weld Quality Inspection",
+            QualityAssuranceType.CoatingQualityInspection => "Coating Quality Inspection",
+            QualityAssuranceType.FinalInspection => "Final Inspection",
+            _ => qaType.ToString()
+        };
+    }
+
+    private string GetQAResultDisplayName(QAResult result)
+    {
+        return result switch
+        {
+            QAResult.Pass => "Pass",
+            QAResult.Fail => "Fail",
+            QAResult.PassWithNotes => "Pass with Notes",
+            _ => result.ToString()
+        };
+    }
+
+    private Color GetResultColor(QAResult result)
+    {
+        return result switch
+        {
+            QAResult.Pass => Color.Success,
+            QAResult.Fail => Color.Error,
+            QAResult.PassWithNotes => Color.Warning,
+            _ => Color.Default
+        };
+    }
+
+    #endregion
+}
