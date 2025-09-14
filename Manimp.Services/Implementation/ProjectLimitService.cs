@@ -29,7 +29,7 @@ public class ProjectLimitService : IProjectLimitService
     {
         var currentMonth = DateTime.UtcNow.ToString("yyyy-MM");
         var limits = await GetOrCreateProjectLimitAsync(tenantId, currentMonth);
-        
+
         return !limits.HasReachedLimit;
     }
 
@@ -42,7 +42,7 @@ public class ProjectLimitService : IProjectLimitService
     {
         var currentMonth = DateTime.UtcNow.ToString("yyyy-MM");
         var limits = await GetOrCreateProjectLimitAsync(tenantId, currentMonth);
-        
+
         return limits.RemainingProjects;
     }
 
@@ -55,7 +55,7 @@ public class ProjectLimitService : IProjectLimitService
     {
         var currentMonth = DateTime.UtcNow.ToString("yyyy-MM");
         var limits = await GetOrCreateProjectLimitAsync(tenantId, currentMonth);
-        
+
         if (limits.HasReachedLimit)
         {
             return false;
@@ -63,7 +63,7 @@ public class ProjectLimitService : IProjectLimitService
 
         limits.ProjectsCreated++;
         limits.UpdatedUtc = DateTime.UtcNow;
-        
+
         await _directoryContext.SaveChangesAsync();
         return true;
     }
@@ -77,12 +77,12 @@ public class ProjectLimitService : IProjectLimitService
     {
         var currentMonth = DateTime.UtcNow.ToString("yyyy-MM");
         var limits = await GetOrCreateProjectLimitAsync(tenantId, currentMonth);
-        
+
         if (limits.ProjectsCreated > 0)
         {
             limits.ProjectsCreated--;
             limits.UpdatedUtc = DateTime.UtcNow;
-            
+
             await _directoryContext.SaveChangesAsync();
             return true;
         }
@@ -100,10 +100,10 @@ public class ProjectLimitService : IProjectLimitService
     {
         var currentMonth = DateTime.UtcNow.ToString("yyyy-MM");
         var limits = await GetOrCreateProjectLimitAsync(tenantId, currentMonth);
-        
+
         limits.AddonProjects += additionalProjects;
         limits.UpdatedUtc = DateTime.UtcNow;
-        
+
         await _directoryContext.SaveChangesAsync();
         return limits;
     }

@@ -637,6 +637,38 @@ dotnet build
 dotnet test
 ```
 
+### Code Quality Standards
+Manimp follows strict code quality standards to maintain a professional, maintainable codebase:
+
+#### Formatting
+All code must pass formatting validation:
+```bash
+# Check formatting issues
+dotnet format --verify-no-changes
+
+# Auto-fix formatting issues  
+dotnet format
+```
+
+#### Build Standards
+All builds must be warning-free:
+```bash
+# Release build with zero warnings required
+dotnet build --configuration Release
+```
+
+#### Common Quality Issues Fixed
+- **Whitespace formatting**: Consistent indentation and line spacing
+- **Unnecessary async methods**: Remove async keywords from methods that don't use await
+- **Component attribute casing**: Use correct case-sensitive attributes (e.g., `@bind-Value` not `@bind-Checked` for MudSwitch)
+
+#### Pre-commit Checklist
+Before committing changes, always run:
+1. `dotnet format` - Fix any formatting issues
+2. `dotnet build --configuration Release` - Ensure zero warnings/errors
+3. `dotnet test` - Verify all tests pass
+4. Manual testing of changed functionality
+
 ## Support & Documentation
 
 ### EN 1090 Steel Construction Compliance

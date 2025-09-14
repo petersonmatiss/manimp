@@ -261,16 +261,16 @@
     private List<Project> Projects = new();
     private MockEN1090ComplianceService MockComplianceService = null!;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         // Create mock compliance service
         MockComplianceService = new MockEN1090ComplianceService();
         
-        await LoadProjectData();
+        LoadProjectData();
         GenerateMockProjects();
     }
 
-    private async Task LoadProjectData()
+    private void LoadProjectData()
     {
         try
         {

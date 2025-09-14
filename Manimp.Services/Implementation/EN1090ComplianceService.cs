@@ -189,9 +189,9 @@ public class EN1090ComplianceService : IEN1090ComplianceService
     /// <param name="countryOfOrigin">Country of origin</param>
     /// <returns>Validation result with any issues</returns>
     public (bool IsValid, List<string> Issues) ValidateMaterialCompliance(
-        int subscriptionTier, 
-        string? materialBatch, 
-        string? certificateType, 
+        int subscriptionTier,
+        string? materialBatch,
+        string? certificateType,
         string? countryOfOrigin)
     {
         var issues = new List<string>();

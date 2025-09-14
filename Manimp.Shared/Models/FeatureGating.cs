@@ -449,7 +449,7 @@ public static class EN1090Constants
             return tier switch
             {
                 Basic => "Basic",
-                Professional => "Professional", 
+                Professional => "Professional",
                 Enterprise => "Enterprise",
                 _ => "Unknown"
             };
