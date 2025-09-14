@@ -177,6 +177,32 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     /// </summary>
     public DbSet<PackingListEntry> PackingListEntries { get; set; }
 
+    // EN 1090 Progress Tracking DbSets
+    /// <summary>
+    /// Gets or sets the assembly progress records
+    /// </summary>
+    public DbSet<AssemblyProgress> AssemblyProgresses { get; set; }
+
+    /// <summary>
+    /// Gets or sets the quality checks
+    /// </summary>
+    public DbSet<QualityCheck> QualityChecks { get; set; }
+
+    /// <summary>
+    /// Gets or sets the non-compliance records
+    /// </summary>
+    public DbSet<NonComplianceRecord> NonComplianceRecords { get; set; }
+
+    /// <summary>
+    /// Gets or sets the assembly progress step history
+    /// </summary>
+    public DbSet<AssemblyProgressStepHistory> AssemblyProgressStepHistories { get; set; }
+
+    /// <summary>
+    /// Gets or sets the outsourced coating lists
+    /// </summary>
+    public DbSet<OutsourcedCoatingList> OutsourcedCoatingLists { get; set; }
+
     /// <summary>
     /// Configures the model that was discovered by convention from the entity types
     /// </summary>
@@ -201,6 +227,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
 
         // Apply CRM Module Model Configuration
         ApplyCrmModuleModel(modelBuilder);
+
+        // Apply EN 1090 Progress Tracking Model Configuration
+        ApplyEN1090ProgressTrackingModel(modelBuilder);
     }
 
     /// <summary>
@@ -1017,6 +1046,147 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.PackingListId);
             entity.HasIndex(e => e.AssemblyId);
             entity.HasIndex(e => e.AssemblyOutsourcingId);
+        });
+    }
+
+    /// <summary>
+    /// Applies EN 1090 Progress Tracking model configuration
+    /// </summary>
+    /// <param name="modelBuilder">The model builder</param>
+    private static void ApplyEN1090ProgressTrackingModel(ModelBuilder modelBuilder)
+    {
+        // Configure AssemblyProgress
+        modelBuilder.Entity<AssemblyProgress>(entity =>
+        {
+            entity.HasKey(e => e.AssemblyProgressId);
+            entity.Property(e => e.CurrentStep).HasConversion<int>();
+            entity.Property(e => e.PreviousStep).HasConversion<int?>();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.StepNotes).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.Assembly)
+                  .WithOne(a => a.Progress)
+                  .HasForeignKey<AssemblyProgress>(e => e.AssemblyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.AssemblyId).IsUnique();
+            entity.HasIndex(e => e.CurrentStep);
+            entity.HasIndex(e => e.IsCoatingOutsourced);
+            entity.HasIndex(e => e.CurrentStepStarted);
+            entity.HasIndex(e => e.UpdatedUtc);
+        });
+
+        // Configure QualityCheck
+        modelBuilder.Entity<QualityCheck>(entity =>
+        {
+            entity.HasKey(e => e.QualityCheckId);
+            entity.Property(e => e.CheckType).HasConversion<int>();
+            entity.Property(e => e.ForStep).HasConversion<int>();
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.CheckedBy).HasMaxLength(100);
+            entity.Property(e => e.CheckResults).HasMaxLength(2000);
+            entity.Property(e => e.StandardReference).HasMaxLength(500);
+            entity.Property(e => e.DefectsFound).HasMaxLength(1000);
+            entity.Property(e => e.CorrectiveActions).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.AssemblyProgress)
+                  .WithMany(ap => ap.QualityChecks)
+                  .HasForeignKey(e => e.AssemblyProgressId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.AssemblyProgressId);
+            entity.HasIndex(e => e.CheckType);
+            entity.HasIndex(e => e.ForStep);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.CheckedDate);
+            entity.HasIndex(e => e.IsRequired);
+        });
+
+        // Configure NonComplianceRecord
+        modelBuilder.Entity<NonComplianceRecord>(entity =>
+        {
+            entity.HasKey(e => e.NonComplianceRecordId);
+            entity.Property(e => e.NCRNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.DiscoveredAtStep).HasConversion<int>();
+            entity.Property(e => e.Severity).HasConversion<int>();
+            entity.Property(e => e.Status).HasConversion<int>();
+            entity.Property(e => e.Description).HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.RootCause).HasMaxLength(1000);
+            entity.Property(e => e.ImmediateAction).HasMaxLength(1000);
+            entity.Property(e => e.PreventiveAction).HasMaxLength(1000);
+            entity.Property(e => e.DiscoveredBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.AssignedTo).HasMaxLength(100);
+            entity.Property(e => e.VerifiedBy).HasMaxLength(100);
+            entity.Property(e => e.VerificationComments).HasMaxLength(1000);
+            entity.Property(e => e.CustomerResponse).HasMaxLength(1000);
+            entity.Property(e => e.EN1090Reference).HasMaxLength(100);
+            entity.Property(e => e.DocumentationReferences).HasMaxLength(500);
+            entity.Property(e => e.CostImpact).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.TimeImpactHours).HasColumnType("decimal(8,2)");
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.QualityCheck)
+                  .WithMany(qc => qc.NonComplianceRecords)
+                  .HasForeignKey(e => e.QualityCheckId)
+                  .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Assembly)
+                  .WithMany(a => a.NonComplianceRecords)
+                  .HasForeignKey(e => e.AssemblyId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.NCRNumber).IsUnique();
+            entity.HasIndex(e => e.AssemblyId);
+            entity.HasIndex(e => e.QualityCheckId);
+            entity.HasIndex(e => e.DiscoveredAtStep);
+            entity.HasIndex(e => e.Severity);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.DiscoveredDate);
+            entity.HasIndex(e => e.TargetResolutionDate);
+            entity.HasIndex(e => e.ActualResolutionDate);
+        });
+
+        // Configure AssemblyProgressStepHistory
+        modelBuilder.Entity<AssemblyProgressStepHistory>(entity =>
+        {
+            entity.HasKey(e => e.AssemblyProgressStepHistoryId);
+            entity.Property(e => e.Step).HasConversion<int>();
+            entity.Property(e => e.UpdatedBy).HasMaxLength(100);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.DurationHours).HasColumnType("decimal(8,2)");
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.AssemblyProgress)
+                  .WithMany(ap => ap.StepHistory)
+                  .HasForeignKey(e => e.AssemblyProgressId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.AssemblyProgressId);
+            entity.HasIndex(e => e.Step);
+            entity.HasIndex(e => e.StepStarted);
+            entity.HasIndex(e => e.StepCompleted);
+        });
+
+        // Configure OutsourcedCoatingList
+        modelBuilder.Entity<OutsourcedCoatingList>(entity =>
+        {
+            entity.HasKey(e => e.OutsourcedCoatingListId);
+            entity.Property(e => e.ListName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+
+            entity.HasOne(e => e.Supplier)
+                  .WithMany()
+                  .HasForeignKey(e => e.SupplierId)
+                  .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasIndex(e => e.SupplierId);
+            entity.HasIndex(e => e.SentDate);
+            entity.HasIndex(e => e.ExpectedReturnDate);
+            entity.HasIndex(e => e.Status);
         });
     }
 }

@@ -412,6 +412,16 @@ public class Assembly
     /// Gets the outsourcing records for this assembly
     /// </summary>
     public ICollection<AssemblyOutsourcing> AssemblyOutsourcings { get; set; } = new HashSet<AssemblyOutsourcing>();
+
+    /// <summary>
+    /// Gets the EN 1090 progress tracking for this assembly
+    /// </summary>
+    public AssemblyProgress? Progress { get; set; }
+
+    /// <summary>
+    /// Gets the non-compliance records for this assembly
+    /// </summary>
+    public ICollection<NonComplianceRecord> NonComplianceRecords { get; set; } = new HashSet<NonComplianceRecord>();
 }
 
 /// <summary>

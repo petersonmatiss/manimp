@@ -7,6 +7,7 @@
 // - Models/SupportingEntities.cs - Supporting business entities (Supplier, Project, Document)
 // - Models/CoreInventory.cs - Core inventory management entities (ProfileInventory, ProfileUsageLog)
 // - Models/Procurement.cs - Tier 2 procurement and remnants entities (PurchaseOrder, etc.)
+// - Models/EN1090ProgressTracking.cs - EN 1090 compliant progress tracking and quality management
 //
 // This modular organization improves maintainability, follows Single Responsibility Principle,
 // and makes the codebase easier to navigate and understand.
