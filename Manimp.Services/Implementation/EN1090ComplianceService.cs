@@ -153,7 +153,7 @@ public class EN1090ComplianceService : IEN1090ComplianceService
                 requirements["WeldingProcedures"] = "Standard procedures";
                 requirements["TestCertificates"] = "EN 10204 2.1 minimum";
                 requirements["Documentation"] = "Standard project documentation";
-                requirements["ExecutionClasses"] = "EXC1 only";
+                requirements["ExecutionClasses"] = "EXC1, EXC2";
                 requirements["Features"] = new[] { "Basic inventory", "Simple project tracking" };
                 break;
 

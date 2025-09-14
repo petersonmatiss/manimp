@@ -536,9 +536,9 @@
     {
         return tier switch
         {
-            1 => "1-2",
-            2 => "3",
-            3 => "4",
+            1 => "1-2", // Basic now supports EXC1 and EXC2
+            2 => "3",   // Professional adds EXC3
+            3 => "4",   // Enterprise adds EXC4
             _ => "?"
         };
     }

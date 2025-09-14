@@ -416,7 +416,7 @@ public static class EN1090Constants
         {
             return subscriptionTier switch
             {
-                Basic => new[] { ExecutionClasses.EXC1 },
+                Basic => new[] { ExecutionClasses.EXC1, ExecutionClasses.EXC2 },
                 Professional => new[] { ExecutionClasses.EXC1, ExecutionClasses.EXC2, ExecutionClasses.EXC3 },
                 Enterprise => ExecutionClasses.All,
                 _ => Array.Empty<string>()
@@ -432,8 +432,8 @@ public static class EN1090Constants
         {
             return executionClass switch
             {
-                ExecutionClasses.EXC1 => Basic,
-                ExecutionClasses.EXC2 or ExecutionClasses.EXC3 => Professional,
+                ExecutionClasses.EXC1 or ExecutionClasses.EXC2 => Basic,
+                ExecutionClasses.EXC3 => Professional,
                 ExecutionClasses.EXC4 => Enterprise,
                 _ => Enterprise // Default to highest tier for unknown classes
             };
