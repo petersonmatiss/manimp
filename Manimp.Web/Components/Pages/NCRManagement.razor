@@ -95,8 +95,8 @@
 
     <!-- NCR Table -->
     <MudPaper>
-        <MudDataGrid T="NonComplianceReport" Items="@FilteredNCRs" Sortable="true" Filterable="false" 
-                     RowsPerPage="25" Pageable="true" Loading="@IsLoading">
+        <MudDataGrid T="NonComplianceReport" Items="@FilteredNCRs" sortable="true" Filterable="false" 
+                     RowsPerPage="25" pageable="true" Loading="@IsLoading">
             <Columns>
                 <PropertyColumn Property="x => x.NCRNumber" Title="NCR Number" />
                 <TemplateColumn Title="Assembly">
@@ -105,14 +105,14 @@
                     </CellTemplate>
                 </TemplateColumn>
                 <PropertyColumn Property="x => x.Category" Title="Category" />
-                <TemplateColumn Title="Severity" Sortable="true">
+                <TemplateColumn Title="Severity" sortable="true">
                     <CellTemplate>
                         <MudChip Color="@GetSeverityColor(context.Item.Severity)" Size="Size.Small">
                             @context.Item.Severity
                         </MudChip>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Status" Sortable="true">
+                <TemplateColumn Title="Status" sortable="true">
                     <CellTemplate>
                         <MudChip Color="@GetStatusColor(context.Item.Status)" Size="Size.Small">
                             @context.Item.Status
@@ -123,7 +123,7 @@
                 <PropertyColumn Property="x => x.DetectedUtc" Title="Detected Date" Format="yyyy-MM-dd" />
                 <PropertyColumn Property="x => x.TargetResolutionDate" Title="Target Resolution" Format="yyyy-MM-dd" />
                 <PropertyColumn Property="x => x.ResponsiblePerson" Title="Responsible Person" />
-                <TemplateColumn Title="Days Open" Sortable="true">
+                <TemplateColumn Title="Days Open" sortable="true">
                     <CellTemplate>
                         @{
                             var daysOpen = (DateTime.UtcNow - context.Item.DetectedUtc).Days;
@@ -133,7 +133,7 @@
                         </span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Actions" Sortable="false">
+                <TemplateColumn Title="Actions" sortable="false">
                     <CellTemplate>
                         <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" 
                                    OnClick="@(() => ViewNCRDetails(context.Item))">
@@ -151,7 +151,7 @@
 </MudContainer>
 
 <!-- Create/Edit NCR Dialog -->
-<MudDialog @bind-IsVisible="ShowNCRDialog" Options="DialogOptions">
+<MudDialog @bind-Visible="ShowNCRDialog" Options="DialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">@(IsEditMode ? "Edit NCR" : "Create New NCR")</MudText>
     </TitleContent>
@@ -217,7 +217,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" sm="6">
-                    <MudCheckBox T="bool" @bind-Checked="CurrentNCR.CustomerNotificationRequired" Label="Customer Notification Required" />
+                    <MudCheckBox T="bool" @bind-Value="CurrentNCR.CustomerNotificationRequired" Label="Customer Notification Required" />
                 </MudItem>
                 
                 @if (CurrentNCR.Status == "Resolved" || CurrentNCR.Status == "Closed")
@@ -253,7 +253,7 @@
 </MudDialog>
 
 <!-- NCR Details Dialog -->
-<MudDialog @bind-IsVisible="ShowNCRDetailsDialog" Options="ViewDialogOptions">
+<MudDialog @bind-Visible="ShowNCRDetailsDialog" Options="ViewDialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">NCR Details - @SelectedNCR?.NCRNumber</MudText>
     </TitleContent>
@@ -471,7 +471,11 @@
             else
             {
                 CurrentNCR.NonComplianceReportId = NCRs.Count + 1;
-                CurrentNCR.Assembly = AvailableAssemblies.FirstOrDefault(a => a.AssemblyId == CurrentNCR.AssemblyId);
+                var assembly = AvailableAssemblies.FirstOrDefault(a => a.AssemblyId == CurrentNCR.AssemblyId);
+                if (assembly != null)
+                {
+                    CurrentNCR.Assembly = assembly;
+                }
                 NCRs.Add(CurrentNCR);
             }
 

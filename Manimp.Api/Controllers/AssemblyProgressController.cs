@@ -75,6 +75,11 @@ public class AssemblyProgressController : ControllerBase
     [HttpPut("{id}/status")]
     public async Task<ActionResult> UpdateAssemblyStatus(int id, [FromBody] UpdateStatusRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         try
         {
             var result = await _assemblyProgressService.UpdateAssemblyStatusAsync(
@@ -103,11 +108,16 @@ public class AssemblyProgressController : ControllerBase
     [HttpPost("{id}/qa")]
     public async Task<ActionResult> AddQualityAssuranceRecord(int id, [FromBody] AddQARecordRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         try
         {
             var result = await _assemblyProgressService.AddQualityAssuranceRecordAsync(
-                id, request.QAType, request.Result, request.PerformedBy, 
-                request.ForStatus, request.Findings, request.CorrectiveActions, 
+                id, request.QAType, request.Result, request.PerformedBy,
+                request.ForStatus, request.Findings, request.CorrectiveActions,
                 request.EN1090Reference);
 
             if (!result.Success)
@@ -133,10 +143,15 @@ public class AssemblyProgressController : ControllerBase
     [HttpPost("{id}/ncr")]
     public async Task<ActionResult> CreateNonComplianceReport(int id, [FromBody] CreateNCRRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         try
         {
             var result = await _assemblyProgressService.CreateNonComplianceReportAsync(
-                id, request.NCRNumber, request.DetectedBy, request.Category, 
+                id, request.NCRNumber, request.DetectedBy, request.Category,
                 request.Severity, request.Description, request.EN1090Reference);
 
             if (!result.Success)
@@ -162,10 +177,15 @@ public class AssemblyProgressController : ControllerBase
     [HttpPost("{id}/outsourced-coating")]
     public async Task<ActionResult> CreateOutsourcedCoatingTracking(int id, [FromBody] CreateOutsourcedCoatingRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
         try
         {
             var result = await _assemblyProgressService.CreateOutsourcedCoatingTrackingAsync(
-                id, request.SupplierId, request.SentBy, request.ExpectedReturnDate, 
+                id, request.SupplierId, request.SentBy, request.ExpectedReturnDate,
                 request.CoatingSpecification, request.Cost);
 
             if (!result.Success)

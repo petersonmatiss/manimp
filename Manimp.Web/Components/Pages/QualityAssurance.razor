@@ -116,7 +116,7 @@
                 @if (Assembly.QualityAssuranceRecords?.Any() == true)
                 {
                     <MudDataGrid Items="Assembly.QualityAssuranceRecords.OrderByDescending(qa => qa.PerformedUtc)" 
-                                 Sortable="true" Filterable="false" RowsPerPage="10" Pageable="true">
+                                 sortable="true" Filterable="false" RowsPerPage="10" pageable="true">
                         <Columns>
                             <PropertyColumn Property="x => x.PerformedUtc" Title="Date" Format="yyyy-MM-dd HH:mm" />
                             <TemplateColumn Title="QA Type">
@@ -159,7 +159,7 @@
 </MudContainer>
 
 <!-- QA Details Dialog -->
-<MudDialog @bind-IsVisible="ShowQADetailsDialog" Options="DialogOptions">
+<MudDialog @bind-Visible="ShowQADetailsDialog" Options="DialogOptions">
     <TitleContent>
         <MudText Typo="Typo.h6">QA Record Details</MudText>
     </TitleContent>

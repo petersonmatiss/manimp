@@ -81,7 +81,7 @@
                 <MudTextField @bind-Value="SearchTerm" Label="Search Assembly Mark" Immediate="true" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
-                <MudCheckBox T="bool" @bind-Checked="ShowOnlyOutsourced" Label="Show Only Outsourced Coating" />
+                <MudCheckBox T="bool" @bind-Value="ShowOnlyOutsourced" Label="Show Only Outsourced Coating" />
             </MudItem>
             <MudItem xs="12" sm="6" md="3">
                 <MudButton StartIcon="Icons.Material.Filled.Refresh" Color="Color.Primary" Variant="Variant.Filled" OnClick="RefreshData">
@@ -93,12 +93,12 @@
 
     <!-- Assembly Progress Table -->
     <MudPaper Class="mt-4">
-        <MudDataGrid T="Assembly" Items="@FilteredAssemblies" Sortable="true" Filterable="false" 
-                     RowsPerPage="25" Pageable="true" Loading="@IsLoading">
+        <MudDataGrid T="Assembly" Items="@FilteredAssemblies" sortable="true" Filterable="false" 
+                     RowsPerPage="25" pageable="true" Loading="@IsLoading">
             <Columns>
                 <PropertyColumn Property="x => x.AssemblyMark" Title="Assembly Mark" />
                 <PropertyColumn Property="x => x.Description" Title="Description" />
-                <TemplateColumn Title="Current Status" Sortable="true">
+                <TemplateColumn Title="Current Status" sortable="true">
                     <CellTemplate>
                         <MudChip Color="@GetStatusColor(context.Item.CurrentStatus)" Size="Size.Small">
                             @GetStatusDisplayName(context.Item.CurrentStatus)
@@ -121,7 +121,7 @@
                         }
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Actions" Sortable="false">
+                <TemplateColumn Title="Actions" sortable="false">
                     <CellTemplate>
                         <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Primary" 
                                    OnClick="@(() => ShowAssemblyDetails(context.Item.AssemblyId))">

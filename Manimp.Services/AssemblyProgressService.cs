@@ -11,9 +11,18 @@ public class AssemblyProgressService
 {
     private readonly AppDbContext _context;
 
+    // Constants for NCR status values
+    private const string NcrStatusOpen = "Open";
+    private const string NcrStatusClosed = "Closed";
+    private const string NcrSeverityCritical = "Critical";
+
+    // Constants for outsourced coating status
+    private const string CoatingStatusSent = "Sent";
+    private const string CoatingStatusReturned = "Returned";
+
     public AssemblyProgressService(AppDbContext context)
     {
-        _context = context;
+        _context = context ?? throw new ArgumentNullException(nameof(context));
     }
 
     /// <summary>
@@ -28,7 +37,7 @@ public class AssemblyProgressService
             .ThenInclude(p => p.Customer)
             .Include(a => a.StatusHistory.OrderByDescending(sh => sh.ChangedUtc).Take(5))
             .Include(a => a.QualityAssuranceRecords)
-            .Include(a => a.NonComplianceReports.Where(ncr => ncr.Status != "Closed"))
+            .Include(a => a.NonComplianceReports.Where(ncr => ncr.Status != NcrStatusClosed))
             .Include(a => a.OutsourcedCoatingTrackings)
             .OrderBy(a => a.AssemblyMark)
             .ToListAsync();
@@ -60,11 +69,20 @@ public class AssemblyProgressService
     /// <param name="notes">Optional notes about the status change</param>
     /// <returns>Result indicating success or failure with message</returns>
     public async Task<(bool Success, string Message)> UpdateAssemblyStatusAsync(
-        int assemblyId, 
-        AssemblyProgressStatus newStatus, 
-        string changedBy, 
+        int assemblyId,
+        AssemblyProgressStatus newStatus,
+        string changedBy,
         string? notes = null)
     {
+        if (assemblyId <= 0)
+        {
+            return (false, "Invalid assembly ID");
+        }
+
+        if (string.IsNullOrWhiteSpace(changedBy))
+        {
+            return (false, "ChangedBy is required");
+        }
         var assembly = await _context.Assemblies
             .Include(a => a.QualityAssuranceRecords)
             .Include(a => a.NonComplianceReports)
@@ -84,7 +102,7 @@ public class AssemblyProgressService
         }
 
         // Check QA requirements
-        var qaResult = await ValidateQARequirementsAsync(assembly, newStatus);
+        var qaResult = ValidateQARequirements(assembly, newStatus);
         if (!qaResult.IsValid)
         {
             return (false, qaResult.Message);
@@ -153,6 +171,15 @@ public class AssemblyProgressService
         string? correctiveActions = null,
         string? en1090Reference = null)
     {
+        if (assemblyId <= 0)
+        {
+            return (false, "Invalid assembly ID");
+        }
+
+        if (string.IsNullOrWhiteSpace(performedBy))
+        {
+            return (false, "PerformedBy is required");
+        }
         var assembly = await _context.Assemblies.FindAsync(assemblyId);
         if (assembly == null)
         {
@@ -220,7 +247,7 @@ public class AssemblyProgressService
             Severity = severity,
             Description = description,
             EN1090Reference = en1090Reference,
-            Status = "Open"
+            Status = NcrStatusOpen
         };
 
         _context.NonComplianceReports.Add(ncr);
@@ -271,7 +298,7 @@ public class AssemblyProgressService
             SentBy = sentBy,
             CoatingSpecification = coatingSpecification,
             Cost = cost,
-            Status = "Sent"
+            Status = CoatingStatusSent
         };
 
         _context.OutsourcedCoatingTrackings.Add(tracking);
@@ -304,7 +331,7 @@ public class AssemblyProgressService
             .Include(ncr => ncr.Assembly)
             .ThenInclude(a => a.AssemblyList)
             .ThenInclude(al => al.CrmProject)
-            .Where(ncr => ncr.Status != "Closed")
+            .Where(ncr => ncr.Status != NcrStatusClosed)
             .OrderByDescending(ncr => ncr.DetectedUtc)
             .ToListAsync();
     }
@@ -312,7 +339,7 @@ public class AssemblyProgressService
     #region Private Helper Methods
 
     private static (bool IsValid, string Message) ValidateStatusProgression(
-        AssemblyProgressStatus currentStatus, 
+        AssemblyProgressStatus currentStatus,
         AssemblyProgressStatus newStatus)
     {
         // Define valid status progressions
@@ -339,8 +366,8 @@ public class AssemblyProgressService
         return (true, "Valid progression");
     }
 
-    private async Task<(bool IsValid, string Message)> ValidateQARequirementsAsync(
-        Assembly assembly, 
+    private static (bool IsValid, string Message) ValidateQARequirements(
+        Assembly assembly,
         AssemblyProgressStatus newStatus)
     {
         // Define required QA checks for each status
@@ -375,11 +402,11 @@ public class AssemblyProgressService
     }
 
     private static (bool IsValid, string Message) ValidateNCRRequirements(
-        Assembly assembly, 
+        Assembly assembly,
         AssemblyProgressStatus newStatus)
     {
         var openCriticalNCRs = assembly.NonComplianceReports
-            .Where(ncr => ncr.Status == "Open" && ncr.Severity == "Critical")
+            .Where(ncr => ncr.Status == NcrStatusOpen && ncr.Severity == NcrSeverityCritical)
             .ToList();
 
         if (openCriticalNCRs.Any())
@@ -401,7 +428,7 @@ public class AssemblyProgressService
             return (false, "No outsourced coating tracking record found");
         }
 
-        if (latestCoatingTracking.Status != "Returned" && latestCoatingTracking.ActualReturnDate == null)
+        if (latestCoatingTracking.Status != CoatingStatusReturned && latestCoatingTracking.ActualReturnDate == null)
         {
             return (false, "Outsourced coating not yet returned");
         }
